@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Cpu, Plane, Shield, Globe, Database, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,26 +6,6 @@ import { Layout } from '../components/Layout';
 import { ASSETS } from '../data/assets';
 
 export const Home: React.FC = () => {
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7242/ingest/ca8c4a37-8bb9-4596-bb35-11959a1e9a60', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        runId: 'pre-fix',
-        hypothesisId: 'A',
-        location: 'src/pages/Home.tsx:Home.useEffect',
-        message: 'Home mounted; asset values',
-        data: {
-          HOME_HERO: ASSETS?.IMAGES?.HOME_HERO,
-          ABOUT_bg: ASSETS?.VIDEOS?.ABOUT_bg,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, []);
-  // #endregion
-
   return (
     <Layout>
       <div className="w-full bg-[#0d1117] text-white">
