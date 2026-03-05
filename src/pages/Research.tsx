@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
-import { BrainCircuit, Plane, Microscope, Printer, ArrowRight, ArrowLeft } from 'lucide-react';
+import { BrainCircuit, Plane, Microscope, Printer, ArrowRight } from 'lucide-react';
 import { ASSETS } from '../data/assets';
 
 interface ResearchArea {
@@ -14,7 +14,8 @@ interface ResearchArea {
 }
 
 export const Research: React.FC = () => {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string>('microstructure');
+  const hasLoggedScrollRef = useRef(false);
 
   const areas: ResearchArea[] = [
     {
@@ -102,129 +103,179 @@ export const Research: React.FC = () => {
     }
   ];
 
-  const selectedArea = areas.find(a => a.id === selectedId);
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/ca8c4a37-8bb9-4596-bb35-11959a1e9a60', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        runId: 'pre-fix',
+        hypothesisId: 'D',
+        location: 'src/pages/Research.tsx:Research.mount',
+        message: 'Research mounted; areas and initial activeId',
+        data: {
+          initialActiveId: 'microstructure',
+          areas: areas.map((a) => ({ id: a.id, image: a.image, title: a.title })),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, []);
+  // #endregion
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Find the section that is currently most visible
+      const scrollPosition = window.scrollY + window.innerHeight / 3;
+      
+      for (const area of areas) {
+        const element = document.getElementById(area.id);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveId(area.id);
+            // #region agent log
+            if (!hasLoggedScrollRef.current) {
+              hasLoggedScrollRef.current = true;
+              fetch('http://127.0.0.1:7242/ingest/ca8c4a37-8bb9-4596-bb35-11959a1e9a60', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  runId: 'pre-fix',
+                  hypothesisId: 'C',
+                  location: 'src/pages/Research.tsx:handleScroll',
+                  message: 'First active section detected by scroll',
+                  data: { chosenId: area.id, scrollPosition },
+                  timestamp: Date.now(),
+                }),
+              }).catch(() => {});
+            }
+            // #endregion
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100; // Adjust for sticky header or spacing
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      setActiveId(id);
+    }
+  };
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <span className="text-primary-600 font-bold uppercase tracking-widest text-sm block mb-3">Core Competencies</span>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900">
-              Research Areas
-            </h1>
-          </motion.div>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <span className="text-primary-600 font-bold uppercase tracking-widest text-sm block mb-3">Core Competencies</span>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900">
+                Research Areas
+              </h1>
+            </motion.div>
+          </div>
+        </div>
 
-          <AnimatePresence mode="wait">
-            {!selectedId ? (
-              // Grid View
-              <motion.div 
-                key="grid"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-8"
-              >
-                {areas.map((area, index) => (
-                  <motion.div 
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex flex-col lg:flex-row gap-12 relative">
+            
+            {/* Left Sidebar - Sticky */}
+            <div className="hidden lg:block w-1/4">
+              <div className="sticky top-32 space-y-2">
+                {areas.map((area) => (
+                  <button
                     key={area.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="relative rounded-2xl p-8 hover:shadow-2xl transition-all group cursor-pointer flex flex-col h-[400px] overflow-hidden"
-                    onClick={() => setSelectedId(area.id)}
+                    onClick={() => scrollToSection(area.id)}
+                    className={`w-full text-left px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-between group ${
+                      activeId === area.id 
+                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' 
+                        : 'bg-white text-gray-500 hover:bg-gray-100'
+                    }`}
                   >
-                    {/* Background Image & Overlay */}
-                    <div className="absolute inset-0 z-0">
+                    <span className={`font-medium ${activeId === area.id ? 'font-bold' : ''}`}>
+                      {area.title}
+                    </span>
+                    {activeId === area.id && (
+                      <motion.div layoutId="activeArrow">
+                        <ArrowRight size={18} />
+                      </motion.div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Content - Scrolling */}
+            <div className="w-full lg:w-3/4 space-y-24 pb-24">
+              {areas.map((area, index) => (
+                <motion.section 
+                  id={area.id} 
+                  key={area.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="scroll-mt-32"
+                >
+                  {/* Mobile Title (visible only on mobile) */}
+                  <div className="lg:hidden mb-6 sticky top-20 z-10 bg-gray-50/95 backdrop-blur-sm py-4 border-b border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                      <area.icon className="text-primary-600" size={24} />
+                      {area.title}
+                    </h2>
+                  </div>
+
+                  <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
+                    {/* Image Header */}
+                    <div className="relative h-[300px] md:h-[400px] overflow-hidden group">
                       <img 
                         src={area.image} 
                         alt={area.title} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 opacity-90 transition-opacity duration-300 group-hover:opacity-80" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col h-full">
-                      <div className="flex items-start justify-between mb-6">
-                        <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl text-white border border-white/20">
-                          <area.icon size={32} />
-                        </div>
-                        <div className="p-2 rounded-full bg-white/10 backdrop-blur-sm text-white/70 group-hover:bg-white group-hover:text-primary-900 transition-colors">
-                          <ArrowRight size={20} />
-                        </div>
-                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
                       
-                      <div className="mt-auto">
-                        <h3 className="text-3xl font-serif font-bold text-white mb-3 drop-shadow-md">{area.title}</h3>
-                        <p className="text-gray-200 leading-relaxed mb-6 line-clamp-3 text-sm font-medium drop-shadow-sm">
-                          {area.summary}
-                        </p>
-                        
-                        <div className="flex items-center gap-2 text-sm font-bold text-white uppercase tracking-widest group-hover:text-primary-200 transition-colors">
-                          Learn More <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform"/>
+                      <div className="absolute bottom-0 left-0 p-8 text-white">
+                        <div className="flex items-center gap-3 mb-3 text-primary-300">
+                          <area.icon size={28} />
+                          <span className="font-bold uppercase tracking-wider text-sm">Research Focus</span>
                         </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              // Detail View
-              <motion.div 
-                key="detail"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white"
-              >
-                <button 
-                  onClick={() => setSelectedId(null)}
-                  className="flex items-center gap-2 text-gray-500 hover:text-primary-600 transition-colors mb-8 group font-medium"
-                >
-                  <div className="p-2 rounded-full bg-gray-100 group-hover:bg-primary-50 transition-colors">
-                    <ArrowLeft size={20} />
-                  </div>
-                  Back to Research Areas
-                </button>
-
-                {selectedArea && (
-                  <div className="flex flex-col lg:flex-row gap-12">
-                    <div className="w-full lg:w-1/3">
-                      <div className="sticky top-28">
-                        <div className="rounded-2xl overflow-hidden shadow-xl mb-6 aspect-[4/3] bg-gray-100">
-                          <img 
-                            src={selectedArea.image} 
-                            alt={selectedArea.title} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="bg-primary-50 p-6 rounded-xl border border-primary-100">
-                          <div className="flex items-center gap-3 mb-2 text-primary-700">
-                            <selectedArea.icon size={24} />
-                            <span className="font-bold uppercase tracking-wider text-sm">Focus Area</span>
-                          </div>
-                          <h2 className="text-2xl font-bold text-gray-900">{selectedArea.title}</h2>
-                        </div>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-2">{area.title}</h2>
+                        <p className="text-gray-200 text-lg max-w-2xl">{area.summary}</p>
                       </div>
                     </div>
 
-                    <div className="w-full lg:w-2/3">
-                      <div className="prose prose-lg max-w-none text-gray-600">
-                        {selectedArea.fullContent}
-                      </div>
+                    {/* Content Body */}
+                    <div className="p-8 md:p-12">
+                      {area.fullContent}
                     </div>
                   </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.section>
+              ))}
+            </div>
+
+          </div>
         </div>
       </div>
     </Layout>

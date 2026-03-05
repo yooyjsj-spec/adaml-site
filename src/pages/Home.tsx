@@ -1,49 +1,68 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Cpu, Plane, Shield } from 'lucide-react';
+import { ArrowRight, Cpu, Plane, Shield, Globe, Database, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { ASSETS } from '../data/assets';
 
 export const Home: React.FC = () => {
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/ca8c4a37-8bb9-4596-bb35-11959a1e9a60', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        runId: 'pre-fix',
+        hypothesisId: 'A',
+        location: 'src/pages/Home.tsx:Home.useEffect',
+        message: 'Home mounted; asset values',
+        data: {
+          HOME_HERO: ASSETS?.IMAGES?.HOME_HERO,
+          ABOUT_bg: ASSETS?.VIDEOS?.ABOUT_bg,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, []);
+  // #endregion
+
   return (
     <Layout>
-      <div className="w-full bg-white">
+      <div className="w-full bg-[#0d1117] text-white">
         {/* Hero Section */}
-        <section className="relative min-h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden">
-          {/* Soft Background Image - Fixed Asset */}
-          <div className="absolute inset-0">
+        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0 z-0">
             <img 
               src={ASSETS.IMAGES.HOME_HERO}
               alt="Aerospace Background" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover opacity-80"
             />
-            {/* Elegant Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-800/60 mix-blend-multiply"></div>
-            <div className="absolute inset-0 bg-black/20"></div>
+            {/* Gradient Overlay - Adjusted for Teal/Cyan Galaxy */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d1117]/30 to-[#0d1117]"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/60 via-transparent to-[#0d1117]/60"></div>
           </div>
           
-          {/* Content */}
-          <div className="relative z-10 max-w-7xl mx-auto px-6 text-center md:text-left w-full">
+          {/* Hero Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <div className="inline-block px-3 py-1 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
-                <span className="text-white text-xs tracking-widest font-semibold uppercase">Excellence in Research</span>
-              </div>
               <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-tight drop-shadow-lg">
                 ADAM LAB
               </h1>
-              <p className="text-xl md:text-2xl text-gray-200 font-light max-w-2xl mb-10 leading-relaxed drop-shadow-md">
-                <span className="font-semibold text-white">Advancing Aerospace and Defense Materials </span> through <span className="font-semibold text-white"> Microstructural Design of Advanced Alloys</span>.
+              
+              <p className="text-xl md:text-2xl text-gray-200 font-light max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-md">
+                Bridging the gap between <span className="font-semibold text-white">Artificial Intelligence</span> and <span className="font-semibold text-white">Aerospace Defense Materials</span>.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/research" className="px-8 py-4 bg-white text-primary-900 rounded-lg font-medium shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2 group">
-                  Our Research <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link to="/research" className="px-8 py-4 bg-white text-gray-900 rounded-md font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group">
+                  Explore Research <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link to="/contact" className="px-8 py-4 bg-transparent border border-white/40 text-white rounded-lg font-medium hover:bg-white/10 transition-all text-center">
+                <Link to="/contact" className="px-8 py-4 bg-transparent border border-gray-600 text-white rounded-md font-bold hover:border-gray-400 transition-all text-center">
                   Contact Us
                 </Link>
               </div>
@@ -51,70 +70,144 @@ export const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* About Section - Soft Atmosphere */}
-        <section className="py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-col lg:flex-row gap-16 items-center">
+        {/* Video Section (Scroll-triggered) */}
+        <section className="py-24 bg-[#0d1117] relative">
+          <div className="max-w-6xl mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="relative rounded-xl overflow-hidden border border-gray-700 shadow-2xl bg-[#161b22]"
+            >
+              <div className="absolute top-0 left-0 right-0 h-8 bg-[#0d1117] border-b border-gray-700 flex items-center px-4 gap-2 z-10">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                <div className="ml-4 text-xs text-gray-500 font-mono">simulation_preview.mp4</div>
+              </div>
               
-              {/* Text Content */}
-              <motion.div
-                className="flex-1"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <h2 className="text-sm font-bold text-primary-600 uppercase tracking-widest mb-3">About Us</h2>
-                <h3 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-8 leading-tight">
-                  Innovating for the Future of Defense & Aerospace
-                </h3>
-                <div className="prose prose-lg text-gray-600 mb-8 text-justify">
-                  <p>
-                    ADAM Lab (AI Analysis & Defense Aerospace Materials) is a premier research facility dedicated to the convergence of material science and artificial intelligence. We focus on designing next-generation superalloys that can withstand the most extreme environments.
-                  </p>
-                  <p>
-                    By leveraging machine learning algorithms, we predict microstructural behaviors and optimize material properties faster than traditional methods allow.
-                  </p>
+              <div className="pt-8">
+                <video 
+                  autoPlay 
+                  muted 
+                  loop 
+                  playsInline 
+                  className="w-full aspect-video object-cover"
+                >
+                  <source src={ASSETS.VIDEOS.ABOUT_bg} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              
+              {/* Overlay Content on Video */}
+              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 to-transparent">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-600/20 rounded-lg border border-blue-500/30 backdrop-blur-sm">
+                    <Database className="text-blue-400 w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Real-time Microstructure Analysis</h3>
+                    <p className="text-gray-400 text-sm">Processing terabytes of material data for predictive modeling</p>
+                  </div>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  {[
-                    { icon: Cpu, label: "AI Analysis", desc: "Data-driven insights" },
-                    { icon: Plane, label: "Aerospace", desc: "Next-gen materials" },
-                    { icon: Shield, label: "Defense", desc: "Strategic applications" }
-                  ].map((item, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-xl shadow-soft hover:shadow-soft-hover transition-all duration-300 border border-gray-100">
-                      <item.icon className="w-8 h-8 text-primary-600 mb-3" />
-                      <h4 className="font-bold text-gray-900 mb-1">{item.label}</h4>
-                      <span className="text-xs text-gray-500">{item.desc}</span>
+        {/* About Us Section */}
+        <section className="py-24 bg-[#0d1117] border-t border-gray-800">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-sm font-bold text-blue-400 uppercase tracking-widest mb-3">About Us</h2>
+              <h3 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                Innovating for the Future of <br/>Defense & Aerospace
+              </h3>
+              <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                ADAM Lab (AI Analysis & Defense Aerospace Materials) is a premier research facility dedicated to the convergence of material science and artificial intelligence. We focus on designing next-generation superalloys that can withstand the most extreme environments.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { 
+                  icon: Cpu, 
+                  title: "AI Analysis", 
+                  desc: "Data-driven insights",
+                  detail: "Leveraging machine learning to predict material behavior and accelerate discovery."
+                },
+                { 
+                  icon: Plane, 
+                  title: "Aerospace", 
+                  desc: "Next-gen materials",
+                  detail: "Developing high-performance alloys for extreme flight conditions and environments."
+                },
+                { 
+                  icon: Shield, 
+                  title: "Defense", 
+                  desc: "Strategic applications",
+                  detail: "Engineering advanced armor and structural components for national security."
+                }
+              ].map((item, idx) => (
+                <motion.div 
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-[#161b22] p-8 rounded-xl border border-gray-700 hover:border-blue-500/50 transition-colors group"
+                >
+                  <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-900/30 transition-colors">
+                    <item.icon className="w-6 h-6 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
+                  <p className="text-blue-400 text-sm font-medium mb-4">{item.desc}</p>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    {item.detail}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Research Section */}
+        <section className="py-24 bg-[#161b22] border-t border-gray-800">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Research Areas</h2>
+                <p className="text-gray-400 max-w-xl">
+                  Our multidisciplinary approach combines experimental metallurgy with computational modeling.
+                </p>
+              </div>
+              <Link to="/research" className="text-blue-400 font-bold hover:text-blue-300 flex items-center gap-2 group">
+                View all research <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { title: "High-Temperature Superalloys", icon: Zap, desc: "Nickel-based alloys for turbine engines" },
+                { title: "ML-based Prediction", icon: Database, desc: "Neural networks for property forecasting" },
+                { title: "Additive Manufacturing", icon: Globe, desc: "3D printing of complex metal parts" },
+                { title: "Microstructure Analysis", icon: Cpu, desc: "Advanced microscopy and characterization" }
+              ].map((item, idx) => (
+                <Link to="/research" key={idx} className="block group">
+                  <motion.div 
+                    whileHover={{ y: -5 }}
+                    className="h-full bg-[#0d1117] p-6 rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <item.icon className="w-8 h-8 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                      <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Video Content */}
-              <motion.div
-                className="flex-1 w-full"
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="relative rounded-2xl p-2 bg-white shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 group">
-                  <video
-                    src={ASSETS.VIDEOS.ABOUT_bg}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="aspect-video w-full rounded-xl bg-gray-100 object-cover"
-                  />
-                  {/* Optional caption if needed */}
-                </div>
-                <div className="mt-8 text-center lg:text-left ml-4">
-                   <p className="text-sm text-gray-500 italic">"Visualizing atomic structures through advanced simulation"</p>
-                </div>
-              </motion.div>
+                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                    <p className="text-sm text-gray-400">{item.desc}</p>
+                  </motion.div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
