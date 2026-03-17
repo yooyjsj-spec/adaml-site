@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { BrainCircuit, Plane, Microscope, Printer, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Plane, Microscope, Layers, ArrowRight } from 'lucide-react';
 import { ASSETS } from '../data/assets';
 
 interface ResearchArea {
@@ -14,6 +15,7 @@ interface ResearchArea {
 }
 
 export const Research: React.FC = () => {
+  const location = useLocation();
   const [activeId, setActiveId] = useState<string>('microstructure');
 
   const areas: ResearchArea[] = useMemo(
@@ -68,7 +70,7 @@ export const Research: React.FC = () => {
       {
         id: "additive",
         title: "Additive Manufacturing",
-        icon: Printer,
+        icon: Layers,
         image: ASSETS.IMAGES.RESEARCH_PRINT,
         summary: "We develop and optimize metal additive manufacturing processes to control microstructure and enhance mechanical performance.",
         fullContent: (
@@ -104,6 +106,30 @@ export const Research: React.FC = () => {
     ],
     []
   );
+
+  // Hash 기반 스크롤: /research#sectionId 로 진입 시 해당 섹션으로 스크롤
+  useEffect(() => {
+    const hash = location.hash?.replace('#', '');
+    if (hash) {
+      const scrollToHashSection = () => {
+        const element = document.getElementById(hash);
+        if (element) {
+          const offset = 100;
+          const elementRect = element.getBoundingClientRect();
+          const offsetPosition = elementRect.top + window.scrollY - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+          setActiveId(hash);
+        }
+      };
+      // DOM 렌더 완료 후 스크롤 (React Router 네비게이션 후 레이아웃 안정화 대기)
+      const timer = setTimeout(scrollToHashSection, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash]);
 
   useEffect(() => {
     const handleScroll = () => {

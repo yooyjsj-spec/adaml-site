@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
+import { PublicationSearchBar } from '../components/PublicationSearchBar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, BookOpen, Award, Calendar, ChevronLeft, ChevronRight, Users, Search } from 'lucide-react';
 import { journalData } from '../data/journals';
 import { patentData } from '../data/asset_patents';
+import { PUBLICATION_SEARCH_ASSET } from '../data/asset_publication_search';
 import { ASSETS } from '../data/assets';
 import { JournalPaper, PatentItem } from '../types';
 
@@ -12,15 +14,16 @@ type Tab = 'journals' | 'patents';
 
 export const Publications: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('journals');
-  
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Reset pagination when tab changes
+  // Reset pagination when tab or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab]);
+  }, [activeTab, searchQuery]);
 
   // Determine which dataset to use
   const getActiveData = (): (JournalPaper | PatentItem)[] => {
@@ -29,7 +32,31 @@ export const Publications: React.FC = () => {
     return [];
   };
 
-  const currentDataList = getActiveData();
+  // Filter by search query (제목, 저널명/발명자)
+  const currentDataList = useMemo(() => {
+    const data = getActiveData();
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return data;
+
+    return data.filter((item) => {
+      const pub = item as JournalPaper | PatentItem;
+      const isPatent = activeTab === 'patents';
+
+      if (isPatent) {
+        const p = pub as PatentItem;
+        const titleMatch = p.title.toLowerCase().includes(q);
+        const inventorsMatch = p.inventors?.some((name) =>
+          name.toLowerCase().includes(q)
+        );
+        return titleMatch || inventorsMatch;
+      } else {
+        const j = pub as JournalPaper;
+        const titleMatch = j.title.toLowerCase().includes(q);
+        const journalMatch = j.journal.toLowerCase().includes(q);
+        return titleMatch || journalMatch;
+      }
+    });
+  }, [activeTab, searchQuery]);
 
   // Pagination Logic
   const totalPages = Math.ceil(currentDataList.length / itemsPerPage);
@@ -73,7 +100,7 @@ export const Publications: React.FC = () => {
         </motion.div>
 
         {/* Custom Tab Navigation */}
-        <div className="flex justify-center mb-16">
+        <div className="flex justify-center mb-4">
           <div className="flex space-x-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
             {[
               { id: 'journals', label: 'Journals', icon: BookOpen },
@@ -102,6 +129,17 @@ export const Publications: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Search Bar (에셋으로 on/off 가능) */}
+        {PUBLICATION_SEARCH_ASSET.enabled && (
+          <div className="w-full mb-12">
+            <PublicationSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={PUBLICATION_SEARCH_ASSET.placeholder}
+            />
+          </div>
+        )}
 
         {/* Content Area */}
         <AnimatePresence mode="wait">
@@ -216,7 +254,11 @@ export const Publications: React.FC = () => {
                 })
               ) : (
                 <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                  <p className="text-gray-500">No items available in this section yet.</p>
+                  <p className="text-gray-500">
+                    {searchQuery.trim()
+                      ? `"${searchQuery}"에 맞는 결과가 없습니다.`
+                      : 'No items available in this section yet.'}
+                  </p>
                 </div>
               )}
             </div>

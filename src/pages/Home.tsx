@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Cpu, Plane, Shield, Globe, Database, Zap } from 'lucide-react';
+import { ArrowRight, Cpu, Plane, Shield, Globe, Database, Zap, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { ASSETS } from '../data/assets';
@@ -67,12 +67,17 @@ export const Home: React.FC = () => {
                 <div className="ml-4 text-xs text-gray-500 font-mono">simulation_preview.mp4</div>
               </div>
               
-              <div className="pt-8">
+              <div 
+                className="pt-8 select-none"
+                onContextMenu={(e) => e.preventDefault()}
+              >
                 <video 
                   autoPlay 
                   muted 
                   loop 
                   playsInline 
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
                   className="w-full aspect-video object-cover"
                 >
                   <source src={ASSETS.VIDEOS.ABOUT_bg} type="video/mp4" />
@@ -169,12 +174,12 @@ export const Home: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { title: "High-Temperature Superalloys", icon: Zap, desc: "Nickel-based alloys for turbine engines" },
-                { title: "ML-based Prediction", icon: Database, desc: "Neural networks for property forecasting" },
-                { title: "Additive Manufacturing", icon: Globe, desc: "3D printing of complex metal parts" },
-                { title: "Microstructure Analysis", icon: Cpu, desc: "Advanced microscopy and characterization" }
+                { title: "High-Temperature Superalloys", icon: Zap, desc: "Nickel-based alloys for turbine engines", sectionId: "aerospace" },
+                { title: "ML-based Prediction", icon: Database, desc: "Neural networks for property forecasting", sectionId: "ai" },
+                { title: "Additive Manufacturing", icon: Layers, desc: "3D printing of complex metal parts", sectionId: "additive" },
+                { title: "Microstructure Analysis", icon: Cpu, desc: "Advanced microscopy and characterization", sectionId: "microstructure" }
               ].map((item, idx) => (
-                <Link to="/research" key={idx} className="block group">
+                <Link to={`/research#${item.sectionId}`} key={idx} className="block group">
                   <motion.div 
                     whileHover={{ y: -5 }}
                     className="h-full bg-[#0d1117] p-6 rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
