@@ -1,0 +1,9 @@
+# 이미지 빌드 시 Dockerfile 안에서 npm run build가 실행됩니다.
+# 호스트에서 npm run build로 만든 dist/는 이 설정에서 쓰이지 않습니다.
+services:
+  web:
+    build: .
+    image: adam-lab-web:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped

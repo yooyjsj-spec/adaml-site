@@ -88,7 +88,7 @@ export const People: React.FC = () => {
 
   const undergradStudents: UndergradStudent[] = [
     { name: "Dawon Kang", email: "dawon1242@kookmin.ac.kr", research: "Material Synthesis", image: peopleImage("Dawon.jpg") },
-    { name: "Hyungjin Park", email: "chemilk02@kookmin.ac.kr", research: "Sample Prep", image: peopleImage("Hyungjin.jpg") },
+    { name: "Hyeongjin Park", email: "chemilk02@kookmin.ac.kr", research: "Sample Prep", image: peopleImage("Hyeongjin.jpg") },
     { name: "Youngjae Yoo", email: "yooyjsj@kookmin.ac.kr", research: "Simulation Support", image: peopleImage("Youngjae.jpg") },
     { name: "Bogeun Park", email: "qkrqhrms9@kookmin.ac.kr", research: "Literature Review", image: peopleImage("Bogeun.jpg") },
     { name: "Sihyun Park", email: "sihyun00@kookmin.ac.kr", research: "Literature Review", image: peopleImage("Sihyun.jpg") },
