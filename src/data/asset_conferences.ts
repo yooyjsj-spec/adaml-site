@@ -1,46 +1,63 @@
-import { JournalPaper } from '../types';
-import { ASSETS } from './assets';
 import { assetPath } from '../utils/assetPath';
 
-// Conferences data for the Community page
-type ConferenceEntry = Omit<JournalPaper, 'image'> & {
-  image?: string;
-  content: string; // HTML content shown in the detail modal
+type ConferenceSection = {
+  title: string;
+  date: string; // user-editable
+  summary: string; // card subtitle
+  images: string[]; // all conference photos for the section
+  content: string; // HTML shown in the detail modal
 };
 
-const CONFERENCE_ENTRIES: ConferenceEntry[] = [
+const toAsset = (relativePublicPath: string) => assetPath(relativePublicPath);
+
+// Conferences data for the Community page (grouped sections with multiple photos)
+export const conferenceData: ConferenceSection[] = [
   {
-    title: "AI-Driven Microstructure Prediction for Next-Gen Superalloys",
-    doi: "https://doi.org/10.1016/j.jmrt.2025.01.094",
-    image: undefined, // Use default gallery image
-    journal: "TMS 2025 Annual Meeting", 
-    date: "2025.03.15",
+    title: '2025대한금속학회',
+    date: '2025.05.18', // 임의값(수정 예정)
+    summary: '2025 대한금속학회 참가 및 발표/포스터 세션 소식입니다.',
+    images: [
+      toAsset('/images/Conferences/2025_Kr_Metal/2025_Kr_Metal_1.jpg'),
+      toAsset('/images/Conferences/2025_Kr_Metal/2025_Kr_Metal_2.jpg'),
+      toAsset('/images/Conferences/2025_Kr_Metal/2025_Kr_Metal_3.jpg'),
+    ],
     content: `
-      <p class="mb-4 font-bold">AI-Driven Microstructure Prediction for Next-Gen Superalloys</p>
-      <p class="mb-4">This presentation introduced an end-to-end workflow for predicting microstructures in next-generation superalloys using data-driven modeling.</p>
-      <p class="mb-4">We presented how training datasets are constructed from representative alloy compositions and simulation-derived descriptors, followed by model development, cross-validation, and uncertainty-aware evaluation.</p>
-      <p>Key results show improved predictive accuracy for microstructure features, enabling faster design exploration and more reliable guidance for experimental planning.</p>
+      <p class="mb-4 font-bold">2025대한금속학회</p>
+      <p class="mb-4">본 학회에서 ADAM Lab 연구진이 금속 소재 및 공정 관련 연구 성과를 공유했습니다.</p>
+      <p class="mb-4">발표/토론을 통해 데이터 기반 분석 접근과 소재 특성 간의 연계를 확장하는 방향을 논의했습니다.</p>
+      <p>주요 관심 주제: 미세조직 예측, 소재 데이터 분석, 실험-모델링 연계.</p>
     `,
   },
   {
-    title: "In-situ Synchrotron Analysis of Metastable Alloys",
-    doi: "https://doi.org/10.1016/j.actamat.2025.120757",
-    image: undefined, // Use default gallery image
-    journal: "Materials Science & Technology (MS&T) 2024", 
-    date: "2024.10.20",
+    title: '대만APT Workshop',
+    date: '2025.06.10', // 임의값(수정 예정)
+    summary: 'APT 기반 분석 관련 워크숍 참가 사진입니다.',
+    images: [
+      toAsset('/images/Conferences/2025_Taiwan_AtomProbeWorkshop/2025_Taiwan_Atom%20Probe%20Workshop.jpg'),
+    ],
     content: `
-      <p class="mb-4 font-bold">In-situ Synchrotron Analysis of Metastable Alloys</p>
-      <p class="mb-4">We reported an in-situ synchrotron study of metastable alloys, focusing on time-resolved evolution of structural features under controlled conditions.</p>
-      <p class="mb-4">The talk covered experimental acquisition strategy, preprocessing of diffraction signals, and an analysis pipeline that links observed changes to phase transformation mechanisms.</p>
-      <p>We also discussed how the workflow can be integrated with machine-learning interpretation to accelerate insight extraction from large-scale measurements.</p>
+      <p class="mb-4 font-bold">대만APT Workshop</p>
+      <p class="mb-4">APT(Atom Probe Tomography) 기반 분석 기술과 실험 운영 노하우를 중심으로 진행된 워크숍에 참가했습니다.</p>
+      <p class="mb-4">데이터 전처리/해석 과정에서의 주의점, 재현성 확보 방법, 그리고 해석 품질을 높이는 실무 팁을 공유했습니다.</p>
+      <p>이번 워크숍을 통해 APT 분석 워크플로우를 한 단계 더 고도화할 수 있는 인사이트를 얻었습니다.</p>
+    `,
+  },
+  {
+    title: '일본ICSMA20',
+    date: '2025.06.02', // 임의값(수정 예정)
+    summary: '일본 ICSMA20 학회 참가 및 현장 사진 모음입니다.',
+    images: [
+      toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_1.jpg'),
+      toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_2.jpg'),
+      toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_3.jpg'),
+      toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_4.png'),
+      toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_5.png'),
+    ],
+    content: `
+      <p class="mb-4 font-bold">일본ICSMA20</p>
+      <p class="mb-4">ICSMA20 현장에서 ADAM Lab 연구진이 최신 연구 주제를 소개하고 다양한 분야 연구자들과 교류했습니다.</p>
+      <p class="mb-4">특히 소재 특성 분석과 데이터 기반 해석 방법을 결합하는 접근에 대해 심도 있게 논의했습니다.</p>
+      <p>현장 발표/네트워킹을 통해 후속 협력 가능성을 확인하고, 향후 연구 로드맵을 정리했습니다.</p>
     `,
   },
 ];
-
-const buildImage = (image?: string) =>
-  image ? assetPath(image) : ASSETS.GALLERY.TMS_CONF;
-
-export const conferenceData: Array<JournalPaper & { content: string }> = CONFERENCE_ENTRIES.map((entry) => ({
-  ...entry,
-  image: buildImage(entry.image),
-}));

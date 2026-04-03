@@ -49,11 +49,10 @@ export const Community: React.FC = () => {
     id: `conf-${i}`,
     title: c.title,
     date: c.date,
-    summary: `Presented at ${c.journal}`,
+    summary: c.summary,
     category: 'Conference',
-    image: c.image,
-    link: c.doi,
-    content: c.content
+    images: c.images,
+    content: c.content,
   }));
 
   // Sort conferences by oldest first
@@ -234,13 +233,34 @@ const galleryItems: CommunityItem[] = [
                             onClick={() => setSelectedItem(item)}
                             className="bg-white rounded-2xl p-4 shadow-soft hover:shadow-soft-hover border border-gray-100 cursor-pointer group flex flex-col"
                           >
-                            <div className="w-full aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden border border-gray-100 mb-4">
-                              <img
-                                src={item.image}
-                                alt={item.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                            </div>
+                          <div className="mb-4">
+                            {item.images?.length ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                {item.images.map((src, idx) => (
+                                  <div
+                                    key={`${src}-${idx}`}
+                                    className="aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden border border-gray-100"
+                                  >
+                                    <img
+                                      src={src}
+                                      alt={item.title}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              item.image && (
+                                <div className="w-full aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden border border-gray-100">
+                                  <img
+                                    src={item.image}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  />
+                                </div>
+                              )
+                            )}
+                          </div>
                             <div className="flex flex-col flex-grow">
                               <div className="flex justify-between items-center mb-2">
                                 <span className="text-primary-700 font-bold text-xs uppercase bg-primary-50 px-2 py-1 rounded">
@@ -331,13 +351,27 @@ const galleryItems: CommunityItem[] = [
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
                <button onClick={() => setSelectedItem(null)} className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors z-20"><X size={20}/></button>
                
-               {selectedItem.image && (
-                 <div className="h-64 md:h-80 bg-gray-100 overflow-hidden shrink-0">
-                    <img src={selectedItem.image} alt="" className="w-full h-full object-cover" />
-                 </div>
-               )}
-
                <div className="p-8 md:p-10 overflow-y-auto custom-scrollbar">
+                  {selectedItem.images?.length ? (
+                    <div className="mb-8">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {selectedItem.images.map((src, idx) => (
+                          <div
+                            key={`${src}-${idx}`}
+                            className="aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden border border-gray-100"
+                          >
+                            <img src={src} alt={selectedItem.title} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    selectedItem.image && (
+                      <div className="h-64 md:h-80 bg-gray-100 overflow-hidden shrink-0 mb-8">
+                        <img src={selectedItem.image} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )
+                  )}
                   <div className="flex items-center gap-3 mb-4">
                     <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-xs font-bold uppercase">{selectedItem.category}</span>
                     <span className="text-gray-400 text-sm"><Calendar size={14} className="inline mr-1"/> {selectedItem.date}</span>

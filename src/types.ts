@@ -58,6 +58,7 @@ export interface CommunityItem {
   category: 'Award' | 'Conference' | 'Paper' | 'General' | 'Notice' | 'Gallery';
   link?: string; // External link
   image?: string;
+  images?: string[]; // For gallery-style items (e.g., conferences with multiple photos)
 }
 
 export interface NewsItem {

@@ -87,8 +87,8 @@ export const People: React.FC = () => {
   ];
 
   const undergradStudents: UndergradStudent[] = [
-    { name: "Dawon Kang", email: "dawon1242@kookmin.ac.kr", research: "Material Synthesis", image: peopleImage("Dawon.jpg") },
-    { name: "Hyeongjin Park", email: "chemilk02@kookmin.ac.kr", research: "Sample Prep", image: peopleImage("Hyeongjin.jpg") },
+    { name: "Dawon Kang", email: "dawon1242@kookmin.ac.kr", research: "Ti-6AI-4V Microstructure Analysis, EBSD", image: peopleImage("Dawon.jpg") },
+    { name: "Hyeongjin Park", email: "chemilk02@kookmin.ac.kr", research: "EBSD, Sample Prep", image: peopleImage("Hyeongjin.jpg") },
     { name: "Youngjae Yoo", email: "yooyjsj@kookmin.ac.kr", research: "Simulation Support", image: peopleImage("Youngjae.jpg") },
     { name: "Bogeun Park", email: "qkrqhrms9@kookmin.ac.kr", research: "Literature Review", image: peopleImage("Bogeun.jpg") },
     { name: "Sihyun Park", email: "sihyun00@kookmin.ac.kr", research: "Literature Review", image: peopleImage("Sihyun.jpg") },
@@ -333,10 +333,10 @@ export const People: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-white rounded-xl overflow-hidden shadow-soft hover:shadow-lg border border-slate-100 transition-all duration-300 group flex flex-row h-32 md:h-36"
+                className="bg-white rounded-xl overflow-hidden shadow-soft hover:shadow-lg border border-slate-100 transition-all duration-300 group flex flex-row h-40 md:h-44"
               >
                 {/* Image Section (Left) */}
-                <div className="w-28 shrink-0 relative overflow-hidden">
+                <div className="w-32 md:w-36 shrink-0 relative overflow-hidden">
                   <img src={student.image} alt={student.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
