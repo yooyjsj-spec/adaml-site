@@ -11,6 +11,7 @@ type Tab = 'news' | 'notice' | 'conferences' | 'gallery';
 export const Community: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('news');
   const [selectedItem, setSelectedItem] = useState<CommunityItem | null>(null);
+  const [conferencePage, setConferencePage] = useState(1);
 
   // Data for the News section
   const newsItems: CommunityItem[] = [
@@ -52,12 +53,37 @@ export const Community: React.FC = () => {
     category: 'Conference',
     image: c.image,
     link: c.doi,
-    content: `
-      <p class="mb-4 font-bold">Presentation at ${c.journal}</p>
-      <p class="mb-4">Our lab presented research on: <strong>${c.title}</strong></p>
-      <p>This presentation covers advanced techniques in material science and AI analysis as applied to aerospace components.</p>
-    `
+    content: c.content
   }));
+
+  // Sort conferences by oldest first
+  const sortedConferences = [...conferences].sort((a, b) =>
+    (a.date || '').localeCompare(b.date || '')
+  );
+
+  // Pagination for conferences (10 per page)
+  const conferencesPerPage = 10;
+  const totalConferencePages = Math.max(
+    1,
+    Math.ceil(sortedConferences.length / conferencesPerPage)
+  );
+  const currentConferenceItems = sortedConferences.slice(
+    (conferencePage - 1) * conferencesPerPage,
+    conferencePage * conferencesPerPage
+  );
+
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const getExcerpt = (html?: string, maxChars = 140) => {
+    if (!html) return '';
+    const text = stripHtml(html);
+    if (text.length <= maxChars) return text;
+    return `${text.slice(0, maxChars - 1)}...`;
+  };
 
   // Gallery Data
 const galleryItems: CommunityItem[] = [
@@ -137,7 +163,12 @@ const galleryItems: CommunityItem[] = [
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as Tab)}
+                  onClick={() => {
+                    setActiveTab(tab.id as Tab);
+                    if (tab.id === 'conferences') {
+                      setConferencePage(1);
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 mb-1 last:mb-0
                     ${activeTab === tab.id ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
@@ -187,23 +218,84 @@ const galleryItems: CommunityItem[] = [
               )}
 
               {activeTab === 'conferences' && (
-                <motion.div key="conferences" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="grid grid-cols-1 gap-6">
-                  {conferences.length > 0 ? (
-                    conferences.map((item) => (
-                      <div key={item.id} onClick={() => setSelectedItem(item)} className="bg-white rounded-2xl p-6 shadow-soft hover:shadow-soft-hover border border-gray-100 cursor-pointer group flex gap-6">
-                        <div className="w-32 h-32 rounded-xl bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
-                          <img src={item.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        </div>
-                        <div className="flex-grow">
-                          <div className="flex justify-between items-center mb-2">
-                             <span className="text-primary-700 font-bold text-xs uppercase bg-primary-50 px-2 py-1 rounded">Conference</span>
-                             <span className="text-gray-400 text-xs">{item.date}</span>
+                <motion.div
+                  key="conferences"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="space-y-6"
+                >
+                  {sortedConferences.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {currentConferenceItems.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => setSelectedItem(item)}
+                            className="bg-white rounded-2xl p-4 shadow-soft hover:shadow-soft-hover border border-gray-100 cursor-pointer group flex flex-col"
+                          >
+                            <div className="w-full aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden border border-gray-100 mb-4">
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                            </div>
+                            <div className="flex flex-col flex-grow">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-primary-700 font-bold text-xs uppercase bg-primary-50 px-2 py-1 rounded">
+                                  Conference
+                                </span>
+                                <span className="text-gray-400 text-xs">{item.date}</span>
+                              </div>
+                              <h3 className="text-base md:text-lg font-bold text-gray-900 group-hover:text-primary-700 leading-snug line-clamp-3">
+                                {item.title}
+                              </h3>
+                              <p className="text-gray-500 text-xs md:text-sm mt-2 line-clamp-2">
+                                {item.summary}
+                              </p>
+                              {item.content && (
+                                <p className="text-gray-500 text-[11px] md:text-xs mt-2 line-clamp-3">
+                                  {getExcerpt(item.content)}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-700 leading-snug">{item.title}</h3>
-                          <p className="text-gray-500 text-sm mt-1">{item.summary}</p>
-                        </div>
+                        ))}
                       </div>
-                    ))
+
+                      {totalConferencePages > 1 && (
+                        <div className="flex items-center justify-center gap-4 mt-4">
+                          <button
+                            onClick={() => setConferencePage((p) => Math.max(1, p - 1))}
+                            disabled={conferencePage === 1}
+                            className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-1 ${
+                              conferencePage === 1
+                                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            ← Prev
+                          </button>
+                          <span className="text-xs text-gray-500">
+                            Page {conferencePage} / {totalConferencePages}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setConferencePage((p) => Math.min(totalConferencePages, p + 1))
+                            }
+                            disabled={conferencePage === totalConferencePages}
+                            className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-1 ${
+                              conferencePage === totalConferencePages
+                                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            Next →
+                          </button>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                       <p className="text-gray-500">No conference data available yet.</p>
