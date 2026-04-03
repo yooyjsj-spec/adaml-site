@@ -14,7 +14,7 @@ const toAsset = (relativePublicPath: string) => assetPath(relativePublicPath);
 export const conferenceData: ConferenceSection[] = [
   {
     title: '2025 대한금속학회',
-    date: '2025.10.29', // 임의값(수정 예정)
+    date: '2025.10.29', 
     summary: '2025 대한금속학회 참가',
     images: [
       toAsset('/images/Conferences/2025_Kr_Metal/2025_Kr_Metal_1.jpg'),
@@ -30,7 +30,7 @@ export const conferenceData: ConferenceSection[] = [
   },
   {
     title: 'APT Workshop (Taiwan)',
-    date: '2025.08.25~2028.08.26', // 임의값(수정 예정)
+    date: '2025.08.25~2028.08.26', 
     summary: 'APT 기반 분석 관련 워크숍',
     images: [
       toAsset('/images/Conferences/2025_Taiwan_AtomProbeWorkshop/2025_Taiwan_Atom%20Probe%20Workshop.jpg'),
@@ -44,7 +44,7 @@ export const conferenceData: ConferenceSection[] = [
   },
   {
     title: 'ICSMA20 (JAPAN)',
-    date: '2025.06.12', // 임의값(수정 예정)
+    date: '2025.06.12', 
     summary: '일본 ICSMA20 학회',
     images: [
       toAsset('/images/Conferences/20250602_JP_ICSMA20/20250602_JP_ICSMA20_1.jpg'),

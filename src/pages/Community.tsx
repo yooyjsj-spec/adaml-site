@@ -89,7 +89,7 @@ export const Community: React.FC = () => {
 const galleryItems: CommunityItem[] = [
     {
     id: 'g1',
-    title: 'TMS 2024 Conference',
+    title: 'TMS 2024',
     date: '2024-03-05',
     summary: 'Presentation at TMS 2024 Annual Meeting.',
     category: 'Gallery',
