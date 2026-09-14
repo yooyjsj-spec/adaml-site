@@ -218,7 +218,7 @@ const ImagePicker: React.FC<{
         type="button"
         onClick={pickFile}
         disabled={uploading}
-        aria-label={hasPhoto ? m.people.editor.imageChange : m.people.editor.imageAdd}
+        aria-label={uploading ? m.people.editor.imageUploading : hasPhoto ? m.people.editor.imageChange : m.people.editor.imageAdd}
         aria-busy={uploading}
         className={`group/photo absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/50 via-black/0 to-transparent p-3 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-80`}
       >
@@ -242,10 +242,13 @@ const ImagePicker: React.FC<{
             onChange('');
             onStatus(m.people.editor.imageRemove);
           }}
-          className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1 rounded-lg bg-white/95 px-2 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-red-50 hover:text-red-700"
+          aria-label={m.people.editor.imageRemove}
+          className={`absolute right-2 top-2 z-10 inline-flex h-8 items-center justify-center rounded-lg bg-white/95 text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-red-50 hover:text-red-700 ${
+            variant === 'card' ? 'w-8' : 'gap-1 px-2 text-xs font-bold'
+          }`}
         >
           <Trash2 size={13} aria-hidden="true" />
-          {m.people.editor.imageRemove}
+          {variant !== 'card' && m.people.editor.imageRemove}
         </button>
       )}
       {dragging && (
