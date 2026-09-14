@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
+import { LAB_NAME } from '../config/lab';
 import { NewsItem } from '../types';
 import { Calendar, Tag } from 'lucide-react';
 
@@ -8,7 +9,7 @@ export const News: React.FC = () => {
   const newsItems: NewsItem[] = [
     {
       id: '1',
-      title: "SMD Lab Secures New Defense Grant",
+      title: `${LAB_NAME} Secures New Defense Grant`,
       date: "2024-05-15",
       summary: "We are proud to announce a new partnership with the National Defense Research Institute to develop heat-resistant alloys.",
       category: "Award"
@@ -24,7 +25,7 @@ export const News: React.FC = () => {
       id: '3',
       title: "Spring 2024 Lab Workshop",
       date: "2024-02-01",
-      summary: "SMD Lab hosted a workshop on AI applications in metallurgy featuring guest speakers from industry leaders.",
+      summary: `${LAB_NAME} hosted a workshop on AI applications in metallurgy featuring guest speakers from industry leaders.`,
       category: "General"
     }
   ];

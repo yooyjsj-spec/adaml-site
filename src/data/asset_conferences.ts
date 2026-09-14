@@ -1,3 +1,4 @@
+import { LAB_NAME } from '../config/lab';
 import { assetPath } from '../utils/assetPath';
 
 type ConferenceSection = {
@@ -23,7 +24,7 @@ export const conferenceData: ConferenceSection[] = [
     ],
     content: `
       <p class="mb-4 font-bold">2025대한금속학회</p>
-      <p class="mb-4">본 학회에서 SMD Lab 연구진이 금속 소재 및 공정 관련 연구 성과를 공유했습니다.</p>
+      <p class="mb-4">본 학회에서 ${LAB_NAME} 연구진이 금속 소재 및 공정 관련 연구 성과를 공유했습니다.</p>
       <p class="mb-4">발표/토론을 통해 데이터 기반 분석 접근과 소재 특성 간의 연계를 확장하는 방향을 논의했습니다.</p>
       <p>주요 관심 주제: 미세조직 예측, 소재 데이터 분석, 실험-모델링 연계.</p>
     `,
@@ -55,7 +56,7 @@ export const conferenceData: ConferenceSection[] = [
     ],
     content: `
       <p class="mb-4 font-bold">일본ICSMA20</p>
-      <p class="mb-4">ICSMA20 현장에서 SMD Lab 연구진이 최신 연구 주제를 소개하고 다양한 분야 연구자들과 교류했습니다.</p>
+      <p class="mb-4">ICSMA20 현장에서 ${LAB_NAME} 연구진이 최신 연구 주제를 소개하고 다양한 분야 연구자들과 교류했습니다.</p>
       <p class="mb-4">특히 소재 특성 분석과 데이터 기반 해석 방법을 결합하는 접근에 대해 심도 있게 논의했습니다.</p>
       <p>현장 발표/네트워킹을 통해 후속 협력 가능성을 확인하고, 향후 연구 로드맵을 정리했습니다.</p>
     `,

@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PersonRole {
+  PROFESSOR
+  PHD
+  MASTERS
+  POST_PHD
+  POST_MS
+  POST_BS
+  UNDERGRAD
+  ALUMNI
+}
+
+enum UserRole {
+  MEMBER
+  STAFF
+  ADMIN
+}
+
+enum RequestStatus {
+  SUBMITTED
+  IN_REVIEW
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum CommunityCategory {
+  Award
+  Conference
+  Paper
+  General
+  Notice
+  Gallery
+}
+
+enum MediaOwnerType {
+  PERSON
+  COMMUNITY
+  JOURNAL
+  PATENT
+  GENERAL
+}
+
+model User {
+  id                     String            @id @default(uuid())
+  username               String?           @unique
+  email                  String?           @unique
+  passwordHash           String
+  name                   String?
+  affiliation            String?
+  phone                  String?
+  role                   UserRole          @default(MEMBER)
+  emailVerified          Boolean           @default(false)
+  verificationTokenHash  String?
+  verificationExpiresAt  DateTime?
+  encryptedTotpSecret    String?
+  totpEnabled            Boolean           @default(false)
+  recoveryCodeHashes     Json              @default("[]")
+  failedLoginCount       Int               @default(0)
+  lockedUntil            DateTime?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  sessions               Session[]
+  auditLogs              AuditLog[]
+  analysisRequests       AnalysisRequest[] @relation("requester")
+  assignedRequests       AnalysisRequest[] @relation("assignee")
+
+  @@index([role])
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  csrfToken String
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String    @id @default(uuid())
+  userId    String?
+  action    String
+  resource  String?
+  metadata  Json      @default("{}")
+  ip        String?
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([resource])
+}
+
+model AnalysisRequest {
+  id               String         @id @default(uuid())
+  requesterId      String?
+  requester        User?          @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  guestEmail       String?
+  guestName        String?
+  guestAffiliation String?
+  guestPhone       String?
+  title            String
+  category         String?
+  sampleInfo       String?
+  description      String
+  attachments      Json           @default("[]")
+  status           RequestStatus  @default(SUBMITTED)
+  assigneeId       String?
+  assignee         User?          @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  dueDate          DateTime?
+  completedAt      DateTime?
+  adminNote        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status])
+  @@index([requesterId])
+  @@index([guestEmail])
+  @@index([assigneeId])
+  @@index([dueDate])
+}
+
+model EmailLog {
+  id               String   @id @default(uuid())
+  to               String
+  subject          String
+  template         String
+  relatedRequestId String?
+  status           String
+  error            String?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([relatedRequestId])
+}
+
+model Person {
+  id         String     @id @default(uuid())
+  name       String
+  email      String?
+  role       PersonRole
+  title      String?
+  affiliation String?
+  location   String?
+  phone      String?
+  research   String?
+  equipment  Json       @default("[]")
+  image      String?
+  education  Json       @default("[]")
+  experience Json       @default("[]")
+  visible    Boolean    @default(true)
+  sortOrder  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([role, sortOrder])
+}
+
+model CommunityPost {
+  id        String            @id @default(uuid())
+  title     String
+  date      String
+  summary   String
+  content   String?
+  category  CommunityCategory
+  link      String?
+  image     String?
+  images    Json              @default("[]")
+  published Boolean           @default(true)
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([category, date])
+  @@index([published])
+}
+
+model JournalPublication {
+  id        String   @id @default(uuid())
+  title     String
+  doi       String?
+  image     String?
+  journal   String
+  date      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([sortOrder])
+}
+
+model PatentPublication {
+  id              String   @id @default(uuid())
+  title           String
+  country         String
+  date            String
+  number          String
+  applicantsCount Int      @default(0)
+  inventors       Json     @default("[]")
+  link            String?
+  image           String?
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date])
+  @@index([sortOrder])
+}
+
+model MediaAsset {
+  id           String         @id @default(uuid())
+  ownerType    MediaOwnerType @default(GENERAL)
+  ownerId      String?
+  originalName String
+  fileName     String         @unique
+  mimeType     String
+  size         Int
+  url          String
+  storagePath  String
+  createdAt    DateTime       @default(now())
+
+  @@index([ownerType, ownerId])
+}

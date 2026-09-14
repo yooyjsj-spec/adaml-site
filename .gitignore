@@ -9,8 +9,20 @@ lerna-debug.log*
 
 node_modules
 dist
+server/dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+!.env.synology.example
+
+# Synology image packs
+deploy/synology/*.tar
+deploy/synology/*.zip
+deploy/synology/docker-compose.yml
+deploy/synology/.env
+deploy/synology/.env.example
 
 # Editor directories and files
 .vscode/*

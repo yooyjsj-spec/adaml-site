@@ -8,7 +8,7 @@
  * - 그래서 단순 문자열 결합으로 안전하게 경로를 만들어 줍니다.
  */
 export const assetPath = (relativePath: string) => {
-  const base = import.meta.env.BASE_URL || '/';
+  const base = import.meta.env?.BASE_URL || '/';
 
   const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
   const trimmed = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;

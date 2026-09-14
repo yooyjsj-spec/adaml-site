@@ -3,9 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SMD Lab - POSTECH GIFT</title>
+    <title>SEOL - POSTECH GIFT</title>
+    <script>
+      try {
+        var locale = localStorage.getItem('smd-lab-locale');
+        if (locale === 'ko' || locale === 'en') {
+          document.documentElement.lang = locale;
+          document.title = locale === 'ko' ? 'SEOL - 포스텍 친환경소재대학원' : 'SEOL - POSTECH GIFT';
+        }
+      } catch (e) {}
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script>
       /* ------------------------------------------------------------------
          POSTECH Brand Identity palette
@@ -21,8 +30,8 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Rajdhani', 'sans-serif'], 
+              sans: ['Inter', 'Noto Sans KR', 'sans-serif'],
+              serif: ['Rajdhani', 'Noto Sans KR', 'sans-serif'], 
             },
             colors: {
               /* Raw brand swatches — use when the exact BI value is required */

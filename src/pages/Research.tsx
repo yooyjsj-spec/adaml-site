@@ -4,107 +4,29 @@ import { useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { BrainCircuit, Plane, Microscope, Layers, ArrowRight } from 'lucide-react';
 import { ASSETS } from '../data/assets';
+import { useI18n } from '../i18n';
 
-interface ResearchArea {
-  id: string;
-  title: string;
-  summary: string;
-  fullContent: React.ReactNode;
-  icon: React.ElementType;
-  image: string;
-}
+type AreaId = 'microstructure' | 'aerospace' | 'additive' | 'ai';
+
+const AREA_META: { id: AreaId; icon: React.ElementType; image: string }[] = [
+  { id: 'microstructure', icon: Microscope, image: ASSETS.IMAGES.RESEARCH_MICRO },
+  { id: 'aerospace', icon: Plane, image: ASSETS.IMAGES.RESEARCH_AERO },
+  { id: 'additive', icon: Layers, image: ASSETS.IMAGES.RESEARCH_PRINT },
+  { id: 'ai', icon: BrainCircuit, image: ASSETS.IMAGES.RESEARCH_AI },
+];
 
 export const Research: React.FC = () => {
   const location = useLocation();
+  const { m } = useI18n();
   const [activeId, setActiveId] = useState<string>('microstructure');
 
-  const areas: ResearchArea[] = useMemo(
-    () => [
-      {
-        id: "microstructure",
-        title: "Microstructure Analysis",
-        icon: Microscope,
-        image: ASSETS.IMAGES.RESEARCH_MICRO,
-        summary: "We investigate the relationships between processing, microstructure, and properties using advanced characterization techniques and AI-based image analysis.",
-        fullContent: (
-          <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
-            <h3 className="text-xl font-bold text-gray-900">Advanced characterization and analysis of material microstructures</h3>
-            <p>
-              We conduct comprehensive microstructure analysis using state-of-the-art characterization techniques to understand the fundamental relationships between material structure and properties. Our research employs scanning electron microscopy (SEM), transmission electron microscopy (TEM), electron backscatter diffraction (EBSD), X-ray diffraction (XRD), atom probe tomography (APT), and advanced spectroscopy methods to investigate phase distributions, grain structures, crystallographic orientations, precipitation behavior, and defect characteristics.
-            </p>
-            <p>
-              Through detailed quantitative analysis of microstructural features including grain size distribution, texture evolution, phase fractions, and interface characteristics, we establish correlations between processing conditions, microstructural evolution, and resulting material properties. Our work encompasses in-situ and ex-situ characterization under various thermal and mechanical loading conditions to understand dynamic microstructural changes.
-            </p>
-            <p>
-              We develop advanced image analysis algorithms and machine learning approaches for automated microstructure quantification and pattern recognition. Our research provides critical insights for optimizing material processing routes, heat treatment schedules, and alloy compositions to achieve desired microstructural features that enhance mechanical properties, corrosion resistance, and high-temperature performance.
-            </p>
-          </div>
-        )
-      },
-      {
-        id: "aerospace",
-        title: "Aerospace and Defense Materials",
-        icon: Plane,
-        image: ASSETS.IMAGES.RESEARCH_AERO,
-        summary: "We design and optimize advanced alloys for aerospace and defense applications, focusing on performance under extreme conditions.",
-        fullContent: (
-          <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
-            <h3 className="text-xl font-bold text-gray-900">Advanced materials for extreme aerospace and defense environments</h3>
-            <p>
-              Our research focuses on the development of advanced materials capable of operating under extreme high-temperature and harsh environmental conditions for next-generation aircraft, spacecraft, and defense systems. We specialize in the design and development of high-performance alloy systems, including superalloys and high-entropy alloys (HEAs), as well as high-temperature composite materials and advanced armor systems that maintain exceptional mechanical properties and structural integrity under severe operating conditions.
-            </p>
-            
-            <h4 className="text-lg font-bold text-primary-700 mt-6">High-Entropy Alloys (HEAs)</h4>
-            <p>
-              High-entropy alloys, composed of multiple principal elements in near-equimolar ratios, represent a key materials strategy in our research due to their outstanding mechanical strength, high-temperature stability, and superior corrosion and oxidation resistance. We investigate the fundamental relationships between composition, microstructure, and properties to tailor HEAs and conventional alloys for aerospace and defense applications requiring high reliability and durability.
-            </p>
-            <p>
-              Through comprehensive microstructure analysis using advanced characterization techniques such as scanning electron microscopy (SEM), transmission electron microscopy (TEM), electron backscatter diffraction (EBSD), and X-ray diffraction (XRD), we examine the effects of processing parameters on microstructural evolution and material performance. Our research encompasses detailed analyses of phase transformations, grain boundary characteristics, precipitation behavior, and defect structures that govern creep resistance, fatigue life, fracture toughness, and oxidation resistance under extreme conditions.
-            </p>
-            <p>
-              By integrating microstructure-driven insights with predictive modeling, we establish clear links between alloy design, heat treatment processes, and resulting mechanical properties. This approach enables the optimization of alloy compositions, thermal processing routes, and manufacturing strategies to develop materials suitable for aerospace propulsion systems, thermal protection systems, and defense applications exposed to extreme thermal, mechanical, and environmental loading.
-            </p>
-          </div>
-        )
-      },
-      {
-        id: "additive",
-        title: "Additive Manufacturing",
-        icon: Layers,
-        image: ASSETS.IMAGES.RESEARCH_PRINT,
-        summary: "We develop and optimize metal additive manufacturing processes to control microstructure and enhance mechanical performance.",
-        fullContent: (
-          <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
-            <h3 className="text-xl font-bold text-gray-900">3D printing and advanced manufacturing technologies</h3>
-            <p>
-              Development of additive manufacturing processes for complex metallic components, including selective laser melting (SLM), electron beam melting (EBM), and directed energy deposition (DED). We optimize process parameters, investigate microstructure evolution, and enhance mechanical properties of additively manufactured materials for aerospace and defense applications.
-            </p>
-            <p>
-               Our approach addresses key challenges in AM such as residual stress management, porosity reduction, and anisotropy control. By understanding the rapid solidification physics inherent to these processes, we tailor thermal histories to achieve specific microstructural gradients and site-specific properties impossible to achieve with conventional manufacturing.
-            </p>
-          </div>
-        )
-      },
-      {
-        id: "ai",
-        title: "AI Material Analysis",
-        icon: BrainCircuit,
-        image: ASSETS.IMAGES.RESEARCH_AI,
-        summary: "We apply machine learning and deep learning to automate microstructure analysis, predict material properties, and accelerate data-driven materials design.",
-        fullContent: (
-          <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
-            <h3 className="text-xl font-bold text-gray-900">Intelligent analysis and prediction of material properties</h3>
-            <p>
-              We utilize artificial intelligence and machine learning to analyze complex microstructures, predict material properties, and optimize material design. By integrating deep learning with advanced microscopy data, computational modeling, and experimental results, we achieve rapid and accurate material characterization that accelerates the development of new materials.
-            </p>
-            <p>
-              Our models include Convolutional Neural Networks (CNNs) for segmentation of phases and defects in microscopy images, Generative Adversarial Networks (GANs) for super-resolution imaging and structure generation, and physics-informed neural networks to predict material behavior under load. This data-driven approach significantly reduces the time and cost associated with traditional trial-and-error experimental methods.
-            </p>
-          </div>
-        )
-      }
-    ],
-    []
+  const areas = useMemo(
+    () =>
+      AREA_META.map((meta) => ({
+        ...meta,
+        ...m.research.areas[meta.id],
+      })),
+    [m]
   );
 
   // Hash 기반 스크롤: /research#sectionId 로 진입 시 해당 섹션으로 스크롤
@@ -180,9 +102,9 @@ export const Research: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-center"
             >
-              <span className="text-primary-600 font-bold uppercase tracking-widest text-sm block mb-3">Core Competencies</span>
+              <span className="text-primary-600 font-bold uppercase tracking-widest text-sm block mb-3">{m.research.eyebrow}</span>
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900">
-                Research Areas
+                {m.research.title}
               </h1>
             </motion.div>
           </div>
@@ -219,7 +141,7 @@ export const Research: React.FC = () => {
 
             {/* Right Content - Scrolling */}
             <div className="w-full lg:w-3/4 space-y-24 pb-24">
-              {areas.map((area, index) => (
+              {areas.map((area) => (
                 <motion.section 
                   id={area.id} 
                   key={area.id}
@@ -250,7 +172,7 @@ export const Research: React.FC = () => {
                       <div className="absolute bottom-0 left-0 p-8 text-white">
                         <div className="flex items-center gap-3 mb-3 text-primary-300">
                           <area.icon size={28} />
-                          <span className="font-bold uppercase tracking-wider text-sm">Research Focus</span>
+                          <span className="font-bold uppercase tracking-wider text-sm">{m.research.focus}</span>
                         </div>
                         <h2 className="text-3xl md:text-4xl font-serif font-bold mb-2">{area.title}</h2>
                         <p className="text-gray-200 text-lg max-w-2xl">{area.summary}</p>
@@ -259,7 +181,20 @@ export const Research: React.FC = () => {
 
                     {/* Content Body */}
                     <div className="p-8 md:p-12">
-                      {area.fullContent}
+                      <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
+                        <h3 className="text-xl font-bold text-gray-900">{area.heading}</h3>
+                        {area.paragraphs.map((paragraph) => (
+                          <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                        ))}
+                        {area.subsections.map((section) => (
+                          <React.Fragment key={section.title}>
+                            <h4 className="text-lg font-bold text-primary-700 mt-6">{section.title}</h4>
+                            {section.paragraphs.map((paragraph) => (
+                              <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </motion.section>

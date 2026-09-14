@@ -1,6 +1,7 @@
 
 import { JournalPaper } from '../types';
 import { ASSETS } from './assets';
+import { coverForJournalName } from './journalTitleCovers';
 import { assetPath } from '../utils/assetPath';
 
 // NOTE:
@@ -11,6 +12,114 @@ import { assetPath } from '../utils/assetPath';
 type JournalEntry = Omit<JournalPaper, 'image'> & { image?: string };
 
 const JOURNAL_ENTRIES: JournalEntry[] = [
+  {
+    title: "Dual role of B in hydrogen embrittlement resistance of high-strength martensitic medium-Mn steel",
+    doi: "https://doi.org/10.1016/j.actamat.2026.122499",
+    journal: "Acta Materialia",
+    date: "2026.09.01."
+  },
+  {
+    title: "Effects of pre-segregated B and C on H interphase boundary segregation in medium-Mn steel",
+    doi: "https://doi.org/10.1016/j.scriptamat.2026.117419",
+    journal: "Scripta Materialia",
+    date: "2026.09.01."
+  },
+  {
+    title: "Short-range order in face-centered cubic multi-principal element alloys: identification, structure–property relationships, and superfunctional implications",
+    doi: "https://doi.org/10.1007/s10853-026-13515-z",
+    journal: "Journal of Materials Science",
+    date: "2026.08.12."
+  },
+  {
+    title: "Dual precipitation pathway of lamellar B2–CuPd and ordered β′ phases in a Pd–Ag–Cu alloy: Microstructural evolution and coupled mechanical-electrical response",
+    doi: "https://doi.org/10.1016/j.jmrt.2026.07.202",
+    journal: "Journal of Materials Research and Technology",
+    date: "2026.07.01."
+  },
+  {
+    title: "Heat-affected-zone heterogeneity and environment-assisted damage localization in a welded API X70 pipeline steel",
+    doi: "https://doi.org/10.1016/j.jmrt.2026.06.294",
+    journal: "Journal of Materials Research and Technology",
+    date: "2026.07.01."
+  },
+  {
+    title: "Modeling Hardness in Industrial C–Mn Cast Steels with Neural Network Models",
+    doi: "https://doi.org/10.1007/s12666-026-03921-x",
+    journal: "Transactions of the Indian Institute of Metals",
+    date: "2026.05.17."
+  },
+  {
+    title: "Design of hydrogen-resistant high-strength medium-Mn steels via Pareto active learning",
+    doi: "https://doi.org/10.1016/j.actamat.2026.122264",
+    journal: "Acta Materialia",
+    date: "2026.04.22."
+  },
+  {
+    title: "Etching methods for revealing nanoscale precipitates and carbides in Ni-based superalloys",
+    doi: "https://doi.org/10.1186/s42649-026-00125-x",
+    journal: "Applied Microscopy",
+    date: "2026.03.10."
+  },
+  {
+    title: "Emerging Trends in Additive Manufacturing of Metal Matrix Composites: Opportunities and Obstacles",
+    doi: "https://doi.org/10.1002/metm.70020",
+    journal: "MetalMat",
+    date: "2025.11.14."
+  },
+  {
+    title: "Intragranular-heterostructured FeCuNi medium-entropy alloy through immiscibility design approach",
+    doi: "https://doi.org/10.1016/j.jmst.2025.10.059",
+    journal: "Journal of Materials Science & Technology",
+    date: "2025.11.06."
+  },
+  {
+    title: "Linkage between process-induced microstructure and magnetic property of Nd-Fe-B permanent magnets additively manufactured by laser powder bed fusion",
+    doi: "https://doi.org/10.1016/j.matdes.2025.114929",
+    journal: "Materials & Design",
+    date: "2025.10.13."
+  },
+  {
+    title: "Revealing the activation energies for H desorption from spherical semi-coherent and incoherent V4C3 precipitates in martensitic medium-Mn steel",
+    doi: "https://doi.org/10.1016/j.actamat.2025.121618",
+    journal: "Acta Materialia",
+    date: "2025.10.09."
+  },
+  {
+    title: "Effects of Fe content on plane-stress fracture toughness of Fex(CoCrMnNi)100-x complex concentrated alloys",
+    doi: "https://doi.org/10.1016/j.msea.2025.149149",
+    journal: "Materials Science and Engineering A",
+    date: "2025.09.17."
+  },
+  {
+    title: "Dynamic strain aging behavior of Inconel 625 alloy processed via directed energy deposition",
+    doi: "https://doi.org/10.1016/j.msea.2025.149001",
+    journal: "Materials Science and Engineering A",
+    date: "2025.08.20."
+  },
+  {
+    title: "Hydrogen desorption mechanism associated with ε carbide decomposition in martensitic medium-Mn steel",
+    doi: "https://doi.org/10.1016/j.jmrt.2025.07.082",
+    journal: "Journal of Materials Research and Technology",
+    date: "2025.07.01."
+  },
+  {
+    title: "Development of Aluminum Alloys for Additive Manufacturing Using Machine Learning",
+    doi: "https://doi.org/10.4150/jpm.2025.00150",
+    journal: "Journal of Powder Materials",
+    date: "2025.06.30."
+  },
+  {
+    title: "Observation of interface disruption and Lomer-Cottrell locks in a crept L12-strengthened Ni-based superalloy",
+    doi: "https://doi.org/10.1016/j.msea.2025.148570",
+    journal: "Materials Science and Engineering A",
+    date: "2025.05.27."
+  },
+  {
+    title: "Enhancing corrosion resistance of Ti-based amorphous alloy powders via misch metal addition",
+    doi: "https://doi.org/10.1177/00325899251332425",
+    journal: "Powder Metallurgy",
+    date: "2025.04.15."
+  },
   {
     title: "Multi-scale design of deformation mechanisms at hetero-zone boundaries: Dual HDI strengthening driven by TRIP effect",
     doi: "https://doi.org/10.1016/j.jmst.2025.01.032",
@@ -911,10 +1020,13 @@ const JOURNAL_ENTRIES: JournalEntry[] = [
 
 ];
 
-const buildImage = (image?: string) =>
-  image ? assetPath(image) : ASSETS.JOURNALS.DEFAULT_COVER;
+const resolveImageSource = (entry: JournalEntry) =>
+  coverForJournalName(entry.journal) || entry.image || ASSETS.JOURNALS.DEFAULT_COVER;
+
+const buildImage = (image: string) =>
+  /^https?:\/\//i.test(image) ? image : assetPath(image);
 
 export const journalData: JournalPaper[] = JOURNAL_ENTRIES.map((entry) => ({
   ...entry,
-  image: buildImage(entry.image),
+  image: buildImage(resolveImageSource(entry)),
 }));

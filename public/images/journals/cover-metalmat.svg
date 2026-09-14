@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="MetalMat">
+  <rect width="400" height="560" fill="#111827"/>
+  <rect x="18" y="18" width="364" height="524" fill="none" stroke="#d4af37" stroke-width="3"/>
+  <text x="200" y="250" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="48" fill="#f8fafc">MetalMat</text>
+  <text x="200" y="300" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d4af37">WILEY</text>
+</svg>
