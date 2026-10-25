@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="Powder Metallurgy">
+  <rect width="400" height="560" fill="#1f2937"/>
+  <rect x="18" y="18" width="364" height="524" fill="none" stroke="#c5c6ca" stroke-width="3"/>
+  <text x="200" y="230" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="28" fill="#f8fafc">POWDER</text>
+  <text x="200" y="272" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="28" fill="#f8fafc">METALLURGY</text>
+  <text x="200" y="320" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" fill="#c5c6ca">SAGE</text>
+</svg>

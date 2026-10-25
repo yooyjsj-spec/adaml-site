@@ -7,14 +7,45 @@ import { ExternalLink, BookOpen, Award, Calendar, Loader2, Users, Search } from 
 import { journalData } from '../data/journals';
 import { patentData } from '../data/asset_patents';
 import { PUBLICATION_SEARCH_ASSET } from '../data/asset_publication_search';
+import { formatPublicationsUpdatedDate, PUBLICATIONS_LAST_UPDATED } from '../data/publicationsMeta';
 import { ASSETS } from '../data/assets';
 import { JournalPaper, PatentItem } from '../types';
+import { getJournals, getPatents } from '../api/content';
+import { adminJournals, adminPatents } from '../api/admin';
+import { AdminActions, AdminAddButton, AdminEditorModal, EditorField, confirmDelete } from '../components/admin/AdminControls';
+import { useI18n } from '../i18n';
 
 type Tab = 'journals' | 'patents';
 
+const journalFields: EditorField[] = [
+  { key: 'title', label: 'Title', type: 'textarea' },
+  { key: 'journal', label: 'Journal' },
+  { key: 'date', label: 'Date' },
+  { key: 'doi', label: 'DOI / Link' },
+  { key: 'image', label: 'Cover Image URL' },
+  { key: 'sortOrder', label: 'Sort Order', type: 'number' },
+];
+
+const patentFields: EditorField[] = [
+  { key: 'title', label: 'Title', type: 'textarea' },
+  { key: 'country', label: 'Country' },
+  { key: 'date', label: 'Date' },
+  { key: 'number', label: 'Patent Number' },
+  { key: 'applicantsCount', label: 'Applicants Count', type: 'number' },
+  { key: 'inventors', label: 'Inventors', type: 'csv' },
+  { key: 'link', label: 'Link' },
+  { key: 'image', label: 'Image URL' },
+  { key: 'sortOrder', label: 'Sort Order', type: 'number' },
+];
+
 export const Publications: React.FC = () => {
+  const { m, t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('journals');
   const [searchQuery, setSearchQuery] = useState('');
+  const [apiItems, setApiItems] = useState<(JournalPaper | PatentItem)[]>([]);
+  const [apiTotal, setApiTotal] = useState(0);
+  const [apiAvailable, setApiAvailable] = useState(false);
+  const [editor, setEditor] = useState<Record<string, unknown> | null>(null);
 
   // Infinite Scroll State (10개씩 로딩)
   const itemsPerLoad = 10;
@@ -26,6 +57,24 @@ export const Publications: React.FC = () => {
     setVisibleCount(itemsPerLoad);
   }, [activeTab, searchQuery]);
 
+  const load = async () => {
+    try {
+      const result =
+        activeTab === 'journals'
+          ? await getJournals(1, visibleCount, searchQuery.trim())
+          : await getPatents(1, visibleCount, searchQuery.trim());
+      setApiItems(result.items);
+      setApiTotal(result.total);
+      setApiAvailable(true);
+    } catch {
+      setApiAvailable(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [activeTab, searchQuery, visibleCount]);
+
   // Determine which dataset to use
   const getActiveData = (): (JournalPaper | PatentItem)[] => {
     if (activeTab === 'journals') return journalData;
@@ -35,6 +84,7 @@ export const Publications: React.FC = () => {
 
   // Filter by search query (제목, 저널명/발명자)
   const currentDataList = useMemo(() => {
+    if (apiAvailable) return apiItems;
     const data = getActiveData();
     const q = searchQuery.trim().toLowerCase();
     if (!q) return data;
@@ -57,11 +107,12 @@ export const Publications: React.FC = () => {
         return titleMatch || journalMatch;
       }
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, apiAvailable, apiItems]);
 
   // Infinite Scroll Logic
-  const currentItems = currentDataList.slice(0, visibleCount);
-  const hasMore = visibleCount < currentDataList.length;
+  const currentItems = apiAvailable ? currentDataList : currentDataList.slice(0, visibleCount);
+  const totalItems = apiAvailable ? apiTotal : currentDataList.length;
+  const hasMore = visibleCount < totalItems;
 
   // Load the next batch when the sentinel scrolls into view.
   // visibleCount을 deps에 포함해 sentinel이 계속 보이는 경우에도 다음 배치가 이어서 로드되도록 한다.
@@ -74,7 +125,7 @@ export const Publications: React.FC = () => {
       (entries) => {
         if (entries[0].isIntersecting) {
           setVisibleCount((prev) =>
-            Math.min(prev + itemsPerLoad, currentDataList.length)
+            Math.min(prev + itemsPerLoad, totalItems)
           );
         }
       },
@@ -83,7 +134,7 @@ export const Publications: React.FC = () => {
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, visibleCount, currentDataList.length]);
+  }, [hasMore, visibleCount, totalItems]);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -101,26 +152,74 @@ export const Publications: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
+  const savePublication = async (values: Record<string, unknown>) => {
+    if (activeTab === 'journals') {
+      const payload = {
+        title: String(values.title ?? ''),
+        journal: String(values.journal ?? ''),
+        date: String(values.date ?? ''),
+        doi: String(values.doi ?? ''),
+        image: String(values.image ?? ''),
+        sortOrder: Number(values.sortOrder || 0),
+      };
+      if (values.id) await adminJournals.update(String(values.id), payload);
+      else await adminJournals.create(payload);
+    } else {
+      const payload = {
+        title: String(values.title ?? ''),
+        country: String(values.country ?? ''),
+        date: String(values.date ?? ''),
+        number: String(values.number ?? ''),
+        applicantsCount: Number(values.applicantsCount || 0),
+        inventors: Array.isArray(values.inventors) ? values.inventors : [],
+        link: String(values.link ?? ''),
+        image: String(values.image ?? ''),
+        sortOrder: Number(values.sortOrder || 0),
+      };
+      if (values.id) await adminPatents.update(String(values.id), payload);
+      else await adminPatents.create(payload);
+    }
+    await load();
+  };
+
+  const removePublication = async (item: JournalPaper | PatentItem) => {
+    if (!item.id || !confirmDelete(item.title)) return;
+    if (activeTab === 'journals') await adminJournals.remove(item.id);
+    else await adminPatents.remove(item.id);
+    await load();
+  };
+
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-8 md:pt-10 pb-16">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mb-12 text-center"
+          className="mb-6 text-center"
         >
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4 tracking-tight">Publications</h1>
-          <p className="text-gray-500 max-w-2xl mx-auto text-lg">
-            Our research output across leading scientific journals and intellectual property.
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-2 tracking-tight">{m.publications.title}</h1>
+          <p className="text-gray-500 max-w-2xl mx-auto text-base md:text-lg">
+            {m.publications.subtitle}
           </p>
+          <p className="mt-2 text-sm text-gray-400">
+            {t('publications.lastUpdated', { date: formatPublicationsUpdatedDate(PUBLICATIONS_LAST_UPDATED) })}
+          </p>
+          <div className="mt-3 flex justify-center">
+            <AdminAddButton
+              label={activeTab === 'journals' ? '저널 추가' : '특허 추가'}
+              onClick={() => setEditor(activeTab === 'journals'
+                ? { title: '', journal: '', date: new Date().toISOString().slice(0, 10), doi: '', image: '', sortOrder: 0 }
+                : { title: '', country: 'KR', date: new Date().toISOString().slice(0, 10), number: '', applicantsCount: 0, inventors: [], link: '', image: '', sortOrder: 0 })}
+            />
+          </div>
         </motion.div>
 
         {/* Custom Tab Navigation */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-5">
           <div className="flex space-x-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
             {[
-              { id: 'journals', label: 'Journals', icon: BookOpen },
-              { id: 'patents', label: 'Patents', icon: Award }
+              { id: 'journals', label: m.publications.journals, icon: BookOpen },
+              { id: 'patents', label: m.publications.patents, icon: Award }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -148,11 +247,12 @@ export const Publications: React.FC = () => {
 
         {/* Search Bar (에셋으로 on/off 가능) */}
         {PUBLICATION_SEARCH_ASSET.enabled && (
-          <div className="w-full mb-12">
+          <div className="w-full mb-6">
             <PublicationSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder={PUBLICATION_SEARCH_ASSET.placeholder}
+              placeholder={m.publications.searchPlaceholder}
+              ariaLabel={m.publications.searchAria}
             />
           </div>
         )}
@@ -181,21 +281,29 @@ export const Publications: React.FC = () => {
                     : pub.doi;
                   return (
                     <motion.div
-                      key={`${activeTab}-${index}`}
+                      key={`${activeTab}-${pub.id ?? index}`}
                       variants={itemVariants}
-                      className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-soft-hover border border-gray-100 transition-all duration-300 group"
+                      className="relative bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-soft-hover border border-gray-100 transition-all duration-300 group"
                     >
+                      {pub.id && (
+                        <AdminActions
+                          onEdit={() => setEditor(pub)}
+                          onDelete={() => removePublication(pub)}
+                        />
+                      )}
                       <div className="flex flex-col md:flex-row h-full">
                         {/* Image Section */}
                         <div className="md:w-48 lg:w-64 h-48 md:h-auto bg-gray-50 shrink-0 relative overflow-hidden border-b md:border-b-0 md:border-r border-gray-100 flex items-center justify-center">
                            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200" />
                            <img 
                               src={pub.image || ASSETS.JOURNALS.DEFAULT_COVER}
-                              alt="Cover"
+                              alt={`${pub.journal || pub.title} cover`}
+                              referrerPolicy="no-referrer"
                               className="w-full h-full object-cover relative z-10 opacity-90 group-hover:scale-105 transition-transform duration-500"
                               onError={(e) => {
-                                if (e.currentTarget.src !== ASSETS.JOURNALS.DEFAULT_COVER) {
-                                    e.currentTarget.src = ASSETS.JOURNALS.DEFAULT_COVER;
+                                const fallback = ASSETS.JOURNALS.DEFAULT_COVER;
+                                if (!e.currentTarget.src.includes('default.svg')) {
+                                    e.currentTarget.src = fallback;
                                 }
                               }}
                            />
@@ -250,7 +358,7 @@ export const Publications: React.FC = () => {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-900 text-white font-medium text-sm hover:bg-primary-600 transition-colors group/btn"
                               >
-                                {isPatent ? 'View Patent' : 'Read Paper'}
+                                {isPatent ? m.publications.viewPatent : m.publications.readPaper}
                                 {isPatent && !pub.link ? (
                                   <Search size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
                                 ) : (
@@ -259,7 +367,7 @@ export const Publications: React.FC = () => {
                               </a>
                             ) : (
                               <span className="text-gray-400 text-sm italic">
-                                {isPatent ? 'Link unavailable' : 'Access unavailable'}
+                                {isPatent ? m.publications.linkUnavailable : m.publications.accessUnavailable}
                               </span>
                             )}
                           </div>
@@ -272,8 +380,8 @@ export const Publications: React.FC = () => {
                 <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                   <p className="text-gray-500">
                     {searchQuery.trim()
-                      ? `"${searchQuery}"에 맞는 결과가 없습니다.`
-                      : 'No items available in this section yet.'}
+                      ? t('publications.noResults', { query: searchQuery })
+                      : m.publications.noItems}
                   </p>
                 </div>
               )}
@@ -286,14 +394,22 @@ export const Publications: React.FC = () => {
               </div>
             )}
 
-            {!hasMore && currentDataList.length > itemsPerLoad && (
+            {!hasMore && totalItems > itemsPerLoad && (
               <p className="text-center text-sm text-gray-400 py-10">
-                모든 항목을 불러왔습니다. ({currentDataList.length})
+                {t('publications.allLoaded', { total: totalItems })}
               </p>
             )}
 
           </motion.div>
         </AnimatePresence>
+        <AdminEditorModal
+          open={Boolean(editor)}
+          title={editor?.id ? '출판물 수정' : '출판물 추가'}
+          fields={activeTab === 'journals' ? journalFields : patentFields}
+          initial={editor ?? undefined}
+          onClose={() => setEditor(null)}
+          onSave={savePublication}
+        />
       </div>
     </Layout>
   );

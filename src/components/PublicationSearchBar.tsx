@@ -5,6 +5,7 @@ export interface PublicationSearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export const PublicationSearchBar: React.FC<PublicationSearchBarProps> = ({
   value,
   onChange,
   placeholder = 'Search by journal name, paper/patent title...',
+  ariaLabel = 'Publications search',
   className = '',
 }) => {
   return (
@@ -30,7 +32,7 @@ export const PublicationSearchBar: React.FC<PublicationSearchBarProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 shadow-sm"
-        aria-label="Publications search"
+        aria-label={ariaLabel}
       />
     </div>
   );

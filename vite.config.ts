@@ -16,4 +16,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        timeout: 60 * 60 * 1000,
+        proxyTimeout: 60 * 60 * 1000,
+      },
+      '/uploads': 'http://localhost:4000',
+    },
+  },
 });
