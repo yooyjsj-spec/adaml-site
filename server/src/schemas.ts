@@ -22,6 +22,7 @@ export const personSchema = z.object({
   image: optionalText,
   education: z.array(z.record(z.string(), z.unknown())).default([]),
   experience: z.array(z.record(z.string(), z.unknown())).default([]),
+  labGroup: z.enum(['SEOL', 'ADAML']).default('SEOL'),
   visible: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
 });
@@ -99,19 +100,50 @@ export const updateUserRoleSchema = z.object({
   role: z.enum(['MEMBER', 'STAFF', 'ADMIN']),
 });
 
-export const analysisRequestSchema = z.object({
-  title: nonEmpty,
-  category: optionalText,
-  sampleInfo: optionalText,
-  description: nonEmpty,
-  email: z.preprocess(
-    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
-    z.string().trim().toLowerCase().email().optional()
-  ),
-  name: optionalText,
-  affiliation: optionalText,
-  phone: optionalText,
-});
+const analysisPurposeEnum = z.enum(['PROJECT_PRESENTATION', 'JOINT_PAPER', 'OTHER']);
+
+const purposesSchema = z.preprocess((value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fall through to comma-separated values
+    }
+    return trimmed.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}, z.array(analysisPurposeEnum).min(1).max(1));
+
+export const analysisRequestSchema = z
+  .object({
+    title: nonEmpty,
+    category: optionalText,
+    purposes: purposesSchema,
+    purposeOther: optionalText,
+    sampleInfo: optionalText,
+    description: nonEmpty,
+    email: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+      z.string().trim().toLowerCase().email().optional()
+    ),
+    name: optionalText,
+    affiliation: optionalText,
+    phone: optionalText,
+    attachmentLink: optionalText,
+  })
+  .superRefine((data, ctx) => {
+    if (data.purposes[0] === 'OTHER' && !data.purposeOther?.trim()) {
+      ctx.addIssue({ code: 'custom', message: '기타 목적을 입력해주세요.', path: ['purposeOther'] });
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    purposeOther: data.purposes[0] === 'OTHER' ? data.purposeOther?.trim() || null : null,
+  }));
 
 export const updateAnalysisRequestSchema = z.object({
   status: z.enum(['SUBMITTED', 'IN_REVIEW', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'CANCELLED']).optional(),

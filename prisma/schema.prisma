@@ -17,6 +17,11 @@ enum PersonRole {
   ALUMNI
 }
 
+enum PersonLabGroup {
+  SEOL
+  ADAML
+}
+
 enum UserRole {
   MEMBER
   STAFF
@@ -30,6 +35,12 @@ enum RequestStatus {
   COMPLETED
   REJECTED
   CANCELLED
+}
+
+enum AnalysisPurpose {
+  PROJECT_PRESENTATION
+  JOINT_PAPER
+  OTHER
 }
 
 enum CommunityCategory {
@@ -114,6 +125,8 @@ model AnalysisRequest {
   guestPhone       String?
   title            String
   category         String?
+  purposes         AnalysisPurpose[] @default([])
+  purposeOther     String?
   sampleInfo       String?
   description      String
   attachments      Json           @default("[]")
@@ -161,12 +174,14 @@ model Person {
   image      String?
   education  Json       @default("[]")
   experience Json       @default("[]")
+  labGroup   PersonLabGroup @default(SEOL)
   visible    Boolean    @default(true)
   sortOrder  Int        @default(0)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
   @@index([role, sortOrder])
+  @@index([labGroup, role, sortOrder])
 }
 
 model CommunityPost {

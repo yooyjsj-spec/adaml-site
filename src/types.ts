@@ -47,6 +47,9 @@ export enum Role {
   UNDERGRAD = 'Undergraduate Researcher',
 }
 
+export type PersonRole = 'PROFESSOR' | 'PHD' | 'MASTERS' | 'POST_PHD' | 'POST_MS' | 'POST_BS' | 'UNDERGRAD' | 'ALUMNI';
+export type PersonLabGroup = 'SEOL' | 'ADAML';
+
 export interface Person {
   id: string;
   name: string;
@@ -62,11 +65,10 @@ export interface Person {
   equipment?: string[];
   education?: Array<Record<string, unknown>>;
   experience?: Array<Record<string, unknown>>;
+  labGroup?: PersonLabGroup;
   visible?: boolean;
   sortOrder?: number;
 }
-
-export type PersonRole = 'PROFESSOR' | 'PHD' | 'MASTERS' | 'POST_PHD' | 'POST_MS' | 'POST_BS' | 'UNDERGRAD' | 'ALUMNI';
 
 export interface CommunityItem {
   id: string;
@@ -141,10 +143,29 @@ export type AnalysisRequestStatus =
   | 'REJECTED'
   | 'CANCELLED';
 
+export const ANALYSIS_PURPOSES = ['PROJECT_PRESENTATION', 'JOINT_PAPER', 'OTHER'] as const;
+export type AnalysisPurpose = (typeof ANALYSIS_PURPOSES)[number];
+
+export const formatAnalysisPurpose = (
+  purposes: AnalysisPurpose[] | null | undefined,
+  purposeOther: string | null | undefined,
+  labels: Record<AnalysisPurpose, string>
+) => {
+  const purpose = purposes?.[0];
+  if (!purpose) return '';
+  if (purpose === 'OTHER') {
+    const detail = purposeOther?.trim();
+    return detail ? `${labels.OTHER} (${detail})` : labels.OTHER;
+  }
+  return labels[purpose] ?? purpose;
+};
+
 export interface AnalysisRequestItem {
   id: string;
   title: string;
   category?: string | null;
+  purposes?: AnalysisPurpose[];
+  purposeOther?: string | null;
   sampleInfo?: string | null;
   description: string;
   status: AnalysisRequestStatus;
@@ -161,6 +182,10 @@ export interface AnalysisRequestItem {
   guestName?: string | null;
   guestAffiliation?: string | null;
   guestPhone?: string | null;
+  attachments?: Array<
+    | { kind: 'file'; originalName: string; fileName: string; mimeType: string; size: number }
+    | { kind: 'link'; url: string }
+  >;
   dueDate?: string | null;
   completedAt?: string | null;
   adminNote?: string | null;

@@ -1,36 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
-import { Mail, GraduationCap, Phone, Building2, Cpu, Microscope } from 'lucide-react';
+import { Mail, GraduationCap, Phone, Building2, Cpu, History } from 'lucide-react';
 import { MetallicBackground } from '../components/MetallicBackground';
 import { ASSETS } from '../data/assets';
 import { getPeople } from '../api/content';
-import { Person, PersonRole } from '../types';
+import { Person, PersonLabGroup, PersonRole } from '../types';
 import { AdminActions, AdminAddButton, confirmDelete } from '../components/admin/AdminControls';
 import { PersonEditorDraft, PersonEditorModal } from '../components/admin/PersonEditorModal';
 import { adminPeople } from '../api/admin';
 import { useAdminAuth } from '../auth/AdminAuthContext';
-import { LAB_NAME } from '../config/lab';
 import { useI18n } from '../i18n';
 
-const peopleImage = (filename: string) => `${import.meta.env.BASE_URL}images/people/${filename}`;
-
-const fallbackEducation = [
-  { year: '2007 – 2011', degree: 'Ph.D. in Materials Science and Engineering', loc: 'POSTECH, Pohang' },
-  { year: '2004 – 2006', degree: 'M.S. in Materials Science and Engineering', loc: 'POSTECH, Pohang' },
-  { year: '1997 – 2004', degree: 'B.S. in Materials Science and Engineering', loc: 'Korea University, Seoul' },
-];
-
-const fallbackExperience = [
-  { year: '2026.09 – Present', role: `Professor (Head of ${LAB_NAME})`, loc: 'Graduate Institute of Ferrous & Eco Materials Technology (GIFT), POSTECH', current: true },
-  { year: '2024 – 2026.08', role: 'Associate Professor (Head of ADAML)', loc: 'School of Materials Science & Engineering, Kookmin University (KMU)' },
-  { year: '2011 – 2013', role: 'Postdoctoral Fellow', loc: 'Max Planck Institute for Iron Research (MPIE), Germany' },
-];
-
-const emptyMember = (role: PersonRole): Person => ({
+const emptyMember = (role: PersonRole, labGroup: PersonLabGroup = 'SEOL'): Person => ({
   id: '',
   name: '',
   role,
+  labGroup,
   equipment: [],
   sortOrder: 0,
 });
@@ -46,34 +32,132 @@ const memberAccentClass: Record<MemberAccent, { text: string; dot: string }> = {
   ug: { text: 'text-slate-500', dot: 'bg-slate-400' },
 };
 
-const fallbackPeople: Person[] = [
-  { id: '', name: 'Chohyun Lee', email: 'cho0410@kookmin.ac.kr', role: 'PHD', research: '금속 적층제조', equipment: ['TEM', 'APT'], image: peopleImage('Chohyun.jpg') },
-  { id: '', name: 'Wonhui Jo', email: 'jwonh0104@kookmin.ac.kr', role: 'PHD', research: '금속 적층제조 및 미세조직 분석', equipment: ['TEM', 'APT'], image: peopleImage('Wonhui.jpg') },
-  { id: '', name: 'Jeongung Park', email: 'wjddnd636@kookmin.ac.kr', role: 'MASTERS', research: '철강소재 적층제조 및 미세조직 분석', equipment: ['TEM'], image: peopleImage('Jeongung.jpg') },
-  { id: '', name: 'Minyoung Lee', email: '5368min@kookmin.ac.kr', role: 'MASTERS', research: '중망간강 DED 적층', equipment: ['SEM'], image: peopleImage('Minyoung.jpg') },
-  { id: '', name: 'Minyu Kang', email: 'kminyu@kookmin.ac.kr', role: 'MASTERS', research: '제진합금 미세조직 분석', equipment: ['SEM'], image: peopleImage('Minyu.jpg') },
-  { id: '', name: 'Seonghyeon Yang', email: 'sorntmf@kookmin.ac.kr', role: 'MASTERS', research: '철강소재 미세조직 분석', equipment: ['SEM'], image: peopleImage('Seonghyeon.png') },
-  { id: '', name: 'Seunggyu Hong', email: 'hongsg4665@kookmin.ac.kr', role: 'MASTERS', research: '니켈 초내열합금 미세조직 분석', equipment: ['SEM', 'Optical Microscope'], image: peopleImage('Seunggyu.jpg') },
-  { id: '', name: 'Hyunyoung Park', email: 'jury1390@kookmin.ac.kr', role: 'MASTERS', research: '주조용 Al 및 Ni 합금 미세조직 분석', equipment: ['APT'], image: peopleImage('Hyunyoung.jpg') },
-  { id: '', name: 'Dawon Kang', email: 'dawon1242@kookmin.ac.kr', role: 'UNDERGRAD', research: 'Ti-6AI-4V Microstructure Analysis, EBSD', image: peopleImage('Dawon.jpg') },
-  { id: '', name: 'Hyeongjin Park', email: 'chemilk02@kookmin.ac.kr', role: 'UNDERGRAD', research: 'EBSD, Sample Prep', image: peopleImage('Hyeongjin.jpg') },
-  { id: '', name: 'Youngjae Yoo', email: 'yooyjsj@kookmin.ac.kr', role: 'UNDERGRAD', research: 'Simulation Support', image: peopleImage('Youngjae.jpg') },
-  { id: '', name: 'Bogeun Park', email: 'qkrqhrms9@kookmin.ac.kr', role: 'UNDERGRAD', research: 'Literature Review', image: peopleImage('Bogeun.jpg') },
-  { id: '', name: 'Sihyun Park', email: 'sihyun00@kookmin.ac.kr', role: 'UNDERGRAD', research: 'Literature Review', image: peopleImage('Sihyun.jpg') },
-];
+const accentForRole = (role: Person['role']): MemberAccent => {
+  switch (role) {
+    case 'PHD': return 'phd';
+    case 'MASTERS': return 'ms';
+    case 'POST_PHD': return 'postPhd';
+    case 'POST_MS': return 'postMs';
+    case 'POST_BS': return 'postBs';
+    default: return 'ug';
+  }
+};
+
+const pulseClass = 'animate-pulse rounded-md bg-slate-200';
+
+const SkeletonBar = ({ className }: { className: string }) => (
+  <div className={`${pulseClass} ${className}`} />
+);
+
+const MemberCardSkeleton = () => (
+  <div className="relative flex h-40 flex-row overflow-hidden rounded-xl border border-slate-100 bg-white shadow-soft md:h-44">
+    <div className={`${pulseClass} w-32 shrink-0 rounded-none md:w-36`} />
+    <div className="flex min-w-0 flex-grow flex-col justify-center gap-2 p-4">
+      <SkeletonBar className="h-5 w-40" />
+      <SkeletonBar className="h-3 w-24" />
+      <SkeletonBar className="h-3 w-56 max-w-full" />
+      <div className="mt-1 flex gap-1">
+        <SkeletonBar className="h-4 w-10" />
+        <SkeletonBar className="h-4 w-12" />
+      </div>
+    </div>
+  </div>
+);
+
+const TimelineItemSkeleton = () => (
+  <div className="relative pl-6">
+    <div className={`absolute -left-[21px] top-1.5 h-3 w-3 rounded-full ${pulseClass}`} />
+    <SkeletonBar className="mb-2 h-3 w-28" />
+    <SkeletonBar className="mb-2 h-5 w-72 max-w-full" />
+    <SkeletonBar className="h-4 w-48" />
+  </div>
+);
+
+const PeoplePageSkeleton = ({ label }: { label: string }) => (
+  <>
+    <section className="relative w-full overflow-hidden py-20" aria-busy="true" aria-live="polite">
+      <MetallicBackground />
+      <p className="sr-only">{label}</p>
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
+        <div className="relative rounded-3xl border border-white/40 bg-white/80 p-8 shadow-2xl backdrop-blur-md md:p-12">
+          <div className="flex flex-col gap-12 lg:flex-row">
+            <div className="flex w-full flex-col items-center text-center lg:w-1/3">
+              <div className={`${pulseClass} mb-6 aspect-[3/4] w-full rounded-2xl`} />
+              <SkeletonBar className="mb-3 h-8 w-52" />
+              <SkeletonBar className="mb-2 h-4 w-28" />
+              <SkeletonBar className="mb-4 h-8 w-64 max-w-full" />
+              <div className="w-full space-y-3 rounded-xl border border-slate-100 bg-slate-50/50 p-6">
+                <SkeletonBar className="h-4 w-full" />
+                <SkeletonBar className="h-4 w-40" />
+                <SkeletonBar className="h-4 w-56" />
+              </div>
+            </div>
+            <div className="w-full space-y-10 lg:w-2/3">
+              <div>
+                <SkeletonBar className="mb-6 h-7 w-36" />
+                <div className="ml-2 space-y-6 border-l-2 border-slate-200 pl-4">
+                  <TimelineItemSkeleton />
+                  <TimelineItemSkeleton />
+                  <TimelineItemSkeleton />
+                </div>
+              </div>
+              <div>
+                <SkeletonBar className="mb-6 h-7 w-52" />
+                <div className="ml-2 space-y-6 border-l-2 border-slate-200 pl-4">
+                  <TimelineItemSkeleton />
+                  <TimelineItemSkeleton />
+                  <TimelineItemSkeleton />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div className="mx-auto max-w-7xl space-y-24 px-6 py-20" aria-hidden="true">
+      <div>
+        <div className="mb-16 flex justify-center">
+          <SkeletonBar className="h-10 w-40" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <MemberCardSkeleton />
+          <MemberCardSkeleton />
+          <MemberCardSkeleton />
+          <MemberCardSkeleton />
+        </div>
+      </div>
+      <div>
+        <div className="mb-16 flex justify-center">
+          <SkeletonBar className="h-10 w-44" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <MemberCardSkeleton />
+          <MemberCardSkeleton />
+        </div>
+      </div>
+    </div>
+  </>
+);
 
 export const People: React.FC = () => {
   const { m } = useI18n();
   const { isAdmin } = useAdminAuth();
-  const [people, setPeople] = useState<Person[]>(fallbackPeople);
-  const [editor, setEditor] = useState<{ mode: 'professor' | 'student'; person?: Person; role?: PersonRole } | null>(null);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editor, setEditor] = useState<{
+    mode: 'professor' | 'student';
+    person?: Person;
+    role?: PersonRole;
+    labGroup?: PersonLabGroup;
+  } | null>(null);
 
   const load = async () => {
     try {
-      const data = await getPeople();
-      if (data.length) setPeople(data);
+      setPeople(await getPeople());
     } catch {
-      setPeople(fallbackPeople);
+      setPeople((current) => current);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,16 +165,22 @@ export const People: React.FC = () => {
     load();
   }, []);
 
-  const grouped = useMemo(() => ({
-    professor: people.find((person) => person.role === 'PROFESSOR'),
-    phd: people.filter((person) => person.role === 'PHD'),
-    masters: people.filter((person) => person.role === 'MASTERS'),
-    postPhd: people.filter((person) => person.role === 'POST_PHD'),
-    postMs: people.filter((person) => person.role === 'POST_MS'),
-    postBs: people.filter((person) => person.role === 'POST_BS'),
-    undergrads: people.filter((person) => person.role === 'UNDERGRAD'),
-    alumni: people.filter((person) => person.role === 'ALUMNI'),
-  }), [people]);
+  const grouped = useMemo(() => {
+    const current = people.filter((person) => person.role !== 'PROFESSOR' && person.role !== 'ALUMNI' && person.labGroup !== 'ADAML');
+    const adaml = people.filter((person) => person.role !== 'PROFESSOR' && person.role !== 'ALUMNI' && person.labGroup === 'ADAML');
+    const byRole = (list: Person[], role: PersonRole) => list.filter((person) => person.role === role);
+    return {
+      professor: people.find((person) => person.role === 'PROFESSOR'),
+      phd: byRole(current, 'PHD'),
+      masters: byRole(current, 'MASTERS'),
+      postPhd: byRole(current, 'POST_PHD'),
+      postMs: byRole(current, 'POST_MS'),
+      postBs: byRole(current, 'POST_BS'),
+      undergrads: byRole(current, 'UNDERGRAD'),
+      adaml,
+      alumni: people.filter((person) => person.role === 'ALUMNI'),
+    };
+  }, [people]);
 
   const savePerson = async (values: PersonEditorDraft) => {
     const role = editor?.mode === 'professor'
@@ -113,6 +203,7 @@ export const People: React.FC = () => {
       experience: editor?.mode === 'professor'
         ? values.experience.map(({ year, role: expRole, loc }) => ({ year, role: expRole, loc }))
         : [],
+      labGroup: editor?.mode === 'professor' ? 'SEOL' : (values.labGroup || 'SEOL'),
       visible: true,
       sortOrder: Number(values.sortOrder || 0),
     };
@@ -128,8 +219,8 @@ export const People: React.FC = () => {
   };
 
   const professor = grouped.professor;
-  const education = (professor?.education?.length ? professor.education : fallbackEducation) as Array<Record<string, unknown>>;
-  const experience = (professor?.experience?.length ? professor.experience : fallbackExperience) as Array<Record<string, unknown>>;
+  const education = (professor?.education ?? []) as Array<Record<string, unknown>>;
+  const experience = (professor?.experience ?? []) as Array<Record<string, unknown>>;
 
   const roleLabel = (role: Person['role']) => {
     switch (role) {
@@ -162,10 +253,24 @@ export const People: React.FC = () => {
       </div>
       <div className="p-4 flex-grow flex flex-col justify-center min-w-0">
         <h3 className="text-lg font-bold text-slate-900 leading-tight mb-0.5 truncate">{person.name}</h3>
-        <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 flex items-center gap-1 ${memberAccentClass[accent].text}`}>
+        <div className={`text-[10px] font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5 flex-wrap ${memberAccentClass[accent].text}`}>
           <span className={`w-1.5 h-1.5 rounded-full inline-block ${memberAccentClass[accent].dot}`}></span>
           {roleLabel(person.role)}
+          {person.labGroup === 'ADAML' && (
+            <span className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-500">
+              {m.people.adamlBadge}
+            </span>
+          )}
         </div>
+        {person.role === 'ALUMNI' && person.affiliation ? (
+          <div className="text-xs text-slate-600 flex items-center gap-1.5 mb-2">
+            <Building2 size={12} className="text-slate-400 shrink-0" />
+            <span className="font-medium truncate">
+              <span className="sr-only">{m.people.currentPosition}: </span>
+              {person.affiliation}
+            </span>
+          </div>
+        ) : null}
         <div className="text-xs text-slate-600 flex items-center gap-1.5 mb-2">
           <Cpu size={12} className="text-slate-400 shrink-0" />
           <span className="font-medium truncate">{person.research}</span>
@@ -186,14 +291,14 @@ export const People: React.FC = () => {
     </motion.div>
   );
 
-  const memberGroup = (title: string, peopleInGroup: Person[], accent: MemberAccent, addLabel: string, role: PersonRole) => {
+  const memberGroup = (title: string, peopleInGroup: Person[], accent: MemberAccent, addLabel: string, role: PersonRole, labGroup: PersonLabGroup = 'SEOL') => {
     if (!peopleInGroup.length && !isAdmin) return null;
     return (
       <div>
         <div className="flex items-center gap-3 mb-6">
           <h3 className="text-2xl font-bold text-slate-900">{title}</h3>
           <div className="h-px flex-1 bg-slate-200"></div>
-          <AdminAddButton label={addLabel} onClick={() => setEditor({ mode: 'student', role, person: emptyMember(role) })} />
+          <AdminAddButton label={addLabel} onClick={() => setEditor({ mode: 'student', role, labGroup, person: emptyMember(role, labGroup) })} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{peopleInGroup.map((person) => memberCard(person, accent))}</div>
       </div>
@@ -202,37 +307,45 @@ export const People: React.FC = () => {
 
   return (
     <Layout>
+      {loading ? <PeoplePageSkeleton label={m.people.loading} /> : (
+      <>
+      {professor ? (
       <section className="relative w-full py-20 overflow-hidden">
         <MetallicBackground />
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative bg-white/80 backdrop-blur-md rounded-3xl p-8 md:p-12 shadow-2xl border border-white/40">
-            {professor?.id && (
+            {professor.id && (
               <AdminActions onEdit={() => setEditor({ mode: 'professor', person: professor })} />
             )}
             <div className="flex flex-col lg:flex-row gap-12">
               <div className="w-full lg:w-1/3 flex flex-col items-center text-center">
                 <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-lg mb-6 border-4 border-white group">
-                  <img src={professor?.image ?? ASSETS.PEOPLE.PROFESSOR} alt={professor?.name ?? 'Prof. Jae Bok-Seol'} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img src={professor.image || ASSETS.PEOPLE.PROFESSOR} alt={professor.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
-                <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">{professor?.name ?? 'Jae Bok Seol'}</h2>
-                <span className="text-primary-700 font-bold uppercase tracking-widest text-sm mb-1">{professor?.title ?? m.people.professorFallback}</span>
-                <span className="text-gray-500 text-xs mb-4 text-center leading-relaxed whitespace-pre-line">{professor?.affiliation ?? m.people.affiliation}</span>
+                <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">{professor.name}</h2>
+                <span className="text-primary-700 font-bold uppercase tracking-widest text-sm mb-1">{professor.title ?? m.people.professorFallback}</span>
+                <span className="text-gray-500 text-xs mb-4 text-center leading-relaxed whitespace-pre-line">{professor.affiliation ?? m.people.affiliation}</span>
                 <div className="w-full space-y-3 text-left bg-slate-50/50 p-6 rounded-xl border border-slate-100">
                   <div className="flex items-start gap-3 text-sm text-slate-600">
                     <Building2 className="w-4 h-4 mt-1 shrink-0 text-primary-600" />
-                    <span className="whitespace-pre-line">{professor?.location ?? m.people.locationFallback}</span>
+                    <span className="whitespace-pre-line">{professor.location ?? m.people.locationFallback}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Phone className="w-4 h-4 shrink-0 text-primary-600" />
-                    <span>{professor?.phone ?? '+82-54-279-XXXX'}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Mail className="w-4 h-4 shrink-0 text-primary-600" />
-                    <a href={`mailto:${professor?.email ?? 'jb.seol@postech.ac.kr'}`} className="hover:text-primary-700">{professor?.email ?? 'jb.seol@postech.ac.kr'}</a>
-                  </div>
+                  {professor.phone ? (
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Phone className="w-4 h-4 shrink-0 text-primary-600" />
+                      <span>{professor.phone}</span>
+                    </div>
+                  ) : null}
+                  {professor.email ? (
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Mail className="w-4 h-4 shrink-0 text-primary-600" />
+                      <a href={`mailto:${professor.email}`} className="hover:text-primary-700">{professor.email}</a>
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="w-full lg:w-2/3 space-y-10">
+                {education.length ? (
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 border-b-2 border-primary-200 pb-2 mb-6 flex items-center gap-2">
                     <GraduationCap className="text-primary-600" /> {m.people.education}
@@ -248,6 +361,8 @@ export const People: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                ) : null}
+                {experience.length ? (
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 border-b-2 border-primary-200 pb-2 mb-6 flex items-center gap-2">
                     <Building2 className="text-primary-600" /> {m.people.experience}
@@ -263,11 +378,13 @@ export const People: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                ) : null}
               </div>
             </div>
           </motion.div>
         </div>
       </section>
+      ) : null}
 
       <div className="max-w-7xl mx-auto px-6 py-20">
         {(isAdmin || grouped.phd.length || grouped.masters.length) ? (
@@ -302,29 +419,76 @@ export const People: React.FC = () => {
           </motion.div>
         ) : null}
 
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center py-16 bg-slate-100/50 rounded-[40px] border border-dashed border-slate-200">
-          <div className="p-4 bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Microscope className="text-slate-300" size={32} />
-          </div>
-          <h2 className="text-2xl font-serif font-bold text-slate-400 mb-2">{m.people.alumni}</h2>
-          {grouped.alumni.length ? (
-            <div className="max-w-4xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-              {grouped.alumni.map((person) => memberCard(person, 'ug'))}
+        {(isAdmin || grouped.adaml.length) ? (
+          <motion.section
+            id="adaml"
+            aria-labelledby="adaml-heading"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-20"
+          >
+            <div className="text-center mb-8">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">{m.people.adamlSubtitle}</p>
+              <h2 id="adaml-heading" className="text-4xl font-serif font-bold text-slate-900 relative inline-block">
+                {m.people.adaml}
+                <span className="absolute -bottom-3 left-0 w-full h-1.5 bg-slate-400 rounded-full"></span>
+              </h2>
+              <p className="mt-8 max-w-2xl mx-auto text-sm text-slate-500 leading-relaxed">{m.people.adamlIntro}</p>
             </div>
-          ) : (
-            <p className="text-slate-400 text-sm max-w-md mx-auto">{m.people.alumniEmpty}</p>
-          )}
-          <div className="mt-6 flex justify-center">
-            <AdminAddButton label="Alumni 추가" onClick={() => setEditor({ mode: 'student', role: 'ALUMNI', person: emptyMember('ALUMNI') })} />
+            <div className="flex justify-end mb-6">
+              <AdminAddButton
+                label={m.people.addAdamlMember}
+                onClick={() => setEditor({ mode: 'student', role: 'PHD', labGroup: 'ADAML', person: emptyMember('PHD', 'ADAML') })}
+              />
+            </div>
+            {grouped.adaml.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {grouped.adaml.map((person) => memberCard(person, accentForRole(person.role)))}
+              </div>
+            ) : (
+              <p className="text-center text-sm text-slate-400">{m.people.adamlEmpty}</p>
+            )}
+          </motion.section>
+        ) : null}
+
+        <motion.section
+          id="alumni"
+          aria-labelledby="alumni-heading"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="py-16 px-6 bg-slate-100/50 rounded-[40px] border border-dashed border-slate-200"
+        >
+          <div className="text-center">
+            <div className="p-4 bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <History className="text-slate-400" size={32} aria-hidden="true" />
+            </div>
+            <h2 id="alumni-heading" className="text-2xl font-serif font-bold text-slate-700 mb-2">{m.people.alumni}</h2>
+            <p className="text-slate-500 text-sm max-w-md mx-auto">{grouped.alumni.length ? m.people.alumniIntro : m.people.alumniEmpty}</p>
           </div>
-        </motion.div>
+          {grouped.alumni.length ? (
+            <div className="max-w-4xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              {grouped.alumni.map((person) => memberCard(person, accentForRole(person.role)))}
+            </div>
+          ) : null}
+          <div className="mt-6 flex justify-center">
+            <AdminAddButton
+              label={m.people.addAlumni}
+              onClick={() => setEditor({ mode: 'student', role: 'ALUMNI', labGroup: 'SEOL', person: emptyMember('ALUMNI', 'SEOL') })}
+            />
+          </div>
+        </motion.section>
       </div>
+      </>
+      )}
 
       <PersonEditorModal
         open={Boolean(editor)}
         mode={editor?.mode ?? 'student'}
         person={editor?.person}
         defaultRole={editor?.role}
+        defaultLabGroup={editor?.labGroup ?? editor?.person?.labGroup}
         onClose={() => setEditor(null)}
         onSave={savePerson}
       />

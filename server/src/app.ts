@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import cookie from '@fastify/cookie';
@@ -28,6 +29,17 @@ import {
   sendVerificationEmail,
   type RequestNotifyDetails,
 } from './mailer.js';
+import {
+  cleanupStagedFiles,
+  isSafeStoredFileName,
+  MAX_REQUEST_ATTACHMENT_BYTES,
+  MAX_REQUEST_ATTACHMENT_FILES,
+  OVER_LIMIT_MESSAGE,
+  parseAttachments,
+  requestFilePath,
+  saveStagedRequestFiles,
+  stageMultipartFiles,
+} from './requestAttachments.js';
 import {
   consumeRecoveryCode,
   createRecoveryCodes,
@@ -253,6 +265,8 @@ const toRequestNotifyDetails = (item: {
   id: string;
   title: string;
   category: string | null;
+  purposes?: string[];
+  purposeOther?: string | null;
   sampleInfo: string | null;
   description: string;
   status: string;
@@ -263,17 +277,21 @@ const toRequestNotifyDetails = (item: {
   guestName?: string | null;
   guestAffiliation?: string | null;
   guestPhone?: string | null;
+  attachments?: unknown;
   requester: { name: string | null; email: string | null; affiliation: string | null; phone: string | null } | null;
 }): RequestNotifyDetails => ({
   id: item.id,
   title: item.title,
   category: item.category,
+  purposes: item.purposes ?? [],
+  purposeOther: item.purposeOther ?? null,
   sampleInfo: item.sampleInfo,
   description: item.description,
   status: item.status,
   createdAt: item.createdAt,
   dueDate: item.dueDate,
   adminNote: item.adminNote,
+  attachments: parseAttachments(item.attachments),
   requester: item.requester ?? {
     name: item.guestName ?? '비회원',
     email: item.guestEmail ?? null,
@@ -288,13 +306,17 @@ const requesterNotifyEmail = (item: {
 }) => item.requester?.email ?? item.guestEmail ?? null;
 
 export const buildApp = async () => {
-  const app = Fastify({ logger: true, trustProxy: true });
+  const app = Fastify({ logger: true, trustProxy: true, bodyLimit: MAX_REQUEST_ATTACHMENT_BYTES });
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof ZodError) {
       return reply.code(400).send({
         message: error.issues.map((issue) => issue.message).join(', '),
       });
+    }
+    const code = (error as { code?: string }).code;
+    if (code === 'FST_ERR_CTP_BODY_TOO_LARGE' || code === 'FST_REQ_FILE_TOO_LARGE') {
+      return reply.code(413).send({ message: OVER_LIMIT_MESSAGE });
     }
     const statusCode = (error as { statusCode?: number }).statusCode;
     if (typeof statusCode === 'number' && statusCode < 500) {
@@ -307,15 +329,16 @@ export const buildApp = async () => {
   await fs.promises.mkdir(env.uploadDir, { recursive: true });
 
   await app.register(cors, {
-    origin: env.publicOrigin,
+    origin: env.corsOrigins,
     credentials: true,
   });
   await app.register(cookie);
   await app.register(rateLimit, { max: 200, timeWindow: '1 minute' });
   await app.register(multipart, {
     limits: {
-      fileSize: 5 * 1024 * 1024,
-      files: 6,
+      fileSize: MAX_REQUEST_ATTACHMENT_BYTES,
+      files: MAX_REQUEST_ATTACHMENT_FILES,
+      fields: 20,
     },
   });
   await app.register(fastifyStatic, {
@@ -423,8 +446,7 @@ export const buildApp = async () => {
 
     const recoveryHashes = zodJsonStringArray(user.recoveryCodeHashes);
     const remainingRecoveryCodes = await consumeRecoveryCode(recoveryHashes, body.token);
-    const otpOk = verifyTotp(body.token, user.encryptedTotpSecret);
-    if (!otpOk && !remainingRecoveryCodes) {
+    if (!remainingRecoveryCodes && !verifyTotp(body.token, user.encryptedTotpSecret)) {
       return reply.code(401).send({ message: 'Invalid OTP' });
     }
 
@@ -585,8 +607,34 @@ export const buildApp = async () => {
     { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } },
     async (request: AuthenticatedRequest, reply) => {
       const session = await getSession(request);
-      const data = analysisRequestSchema.parse(request.body);
-      const { email, name, affiliation, phone, ...fields } = data;
+      let body: unknown = request.body;
+      let staged: Awaited<ReturnType<typeof stageMultipartFiles>> | null = null;
+
+      if (request.isMultipart()) {
+        staged = await stageMultipartFiles(request);
+        body = staged.fields;
+      }
+
+      const data = analysisRequestSchema.parse(body);
+      const { email, name, affiliation, phone, attachmentLink, ...fields } = data;
+      const attachments: Prisma.InputJsonValue = [
+        ...(staged?.files.map(({ tmpPath: _tmpPath, ...file }) => file) ?? []),
+        ...(attachmentLink ? [{ kind: 'link', url: attachmentLink }] : []),
+      ];
+
+      const persistAndNotify = async (item: Parameters<typeof toRequestNotifyDetails>[0] & { id: string; title: string }) => {
+        try {
+          if (staged?.files.length) {
+            await saveStagedRequestFiles(item.id, staged.files);
+          }
+        } finally {
+          await cleanupStagedFiles(staged?.tmpDir);
+        }
+        const details = toRequestNotifyDetails(item);
+        const adminEmails = await collectAdminNotifyEmails();
+        await Promise.all(adminEmails.map((to) => sendAdminNewRequestEmail(to, details)));
+        return item;
+      };
 
       if (session) {
         request.auth = {
@@ -600,36 +648,45 @@ export const buildApp = async () => {
           totpEnabled: session.user.totpEnabled,
         };
         await requireCsrf(request, reply);
-        if (reply.sent) return;
+        if (reply.sent) {
+          await cleanupStagedFiles(staged?.tmpDir);
+          return;
+        }
         if (!session.user.emailVerified) {
+          await cleanupStagedFiles(staged?.tmpDir);
           return reply.code(403).send({ message: '이메일 인증 후 이용할 수 있습니다.' });
         }
         const item = await prisma.analysisRequest.create({
-          data: { ...fields, requesterId: session.user.id },
+          data: { id: randomUUID(), ...fields, attachments, requesterId: session.user.id },
           include: { requester: { select: requesterPublicSelect } },
         });
         await audit(request, 'analysisRequest.create', 'analysisRequest', { id: item.id });
         if (session.user.email) {
           await sendRequestSubmittedEmail(session.user.email, item.title, item.id);
         }
-        const details = toRequestNotifyDetails(item);
-        const adminEmails = await collectAdminNotifyEmails();
-        await Promise.all(adminEmails.map((to) => sendAdminNewRequestEmail(to, details)));
-        return item;
+        return persistAndNotify(item);
       }
 
       if (!email) {
+        await cleanupStagedFiles(staged?.tmpDir);
         return reply.code(400).send({ message: '이메일을 입력해주세요.' });
       }
       if (!name) {
+        await cleanupStagedFiles(staged?.tmpDir);
         return reply.code(400).send({ message: '이름을 입력해주세요.' });
+      }
+      if (!affiliation) {
+        await cleanupStagedFiles(staged?.tmpDir);
+        return reply.code(400).send({ message: '소속을 입력해주세요.' });
       }
       const item = await prisma.analysisRequest.create({
         data: {
+          id: randomUUID(),
           ...fields,
+          attachments,
           guestEmail: email,
           guestName: name ?? null,
-          guestAffiliation: affiliation ?? null,
+          guestAffiliation: affiliation,
           guestPhone: phone ?? null,
         },
         include: { requester: { select: requesterPublicSelect } },
@@ -643,10 +700,35 @@ export const buildApp = async () => {
         },
       });
       await sendRequestSubmittedEmail(email, item.title, item.id, { guest: true });
-      const details = toRequestNotifyDetails(item);
-      const adminEmails = await collectAdminNotifyEmails();
-      await Promise.all(adminEmails.map((to) => sendAdminNewRequestEmail(to, details)));
-      return item;
+      return persistAndNotify(item);
+    }
+  );
+
+  app.get(
+    '/api/analysis-requests/:id/files/:fileName',
+    { preHandler: [requireAuth] },
+    async (request: AuthenticatedRequest, reply) => {
+      const { id, fileName } = request.params as { id: string; fileName: string };
+      if (!isSafeStoredFileName(fileName)) {
+        return reply.code(400).send({ message: 'Invalid file name' });
+      }
+      const item = await prisma.analysisRequest.findUnique({ where: { id } });
+      if (!item) return reply.code(404).send({ message: 'Not found' });
+      const isStaff = request.auth!.role === 'STAFF' || request.auth!.role === 'ADMIN';
+      const isOwner = item.requesterId === request.auth!.id;
+      if (!isStaff && !isOwner) {
+        return reply.code(403).send({ message: 'Insufficient permissions' });
+      }
+      const meta = parseAttachments(item.attachments).find(
+        (attachment) => attachment.kind === 'file' && attachment.fileName === fileName
+      );
+      if (!meta || meta.kind !== 'file') return reply.code(404).send({ message: 'Not found' });
+      const storedPath = requestFilePath(id, fileName);
+      if (!fs.existsSync(storedPath)) return reply.code(404).send({ message: 'Not found' });
+      return reply
+        .header('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(meta.originalName)}`)
+        .type(meta.mimeType)
+        .send(fs.createReadStream(storedPath));
     }
   );
 

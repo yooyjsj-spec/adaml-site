@@ -50,8 +50,15 @@ export const createTotpSecret = (username: string) => {
 
 export const totpQrDataUrl = (otpauth: string) => QRCode.toDataURL(otpauth);
 
-export const verifyTotp = (token: string, encryptedSecret: string) =>
-  verifySync({ token, secret: decrypt(encryptedSecret) }).valid;
+export const verifyTotp = (token: string, encryptedSecret: string) => {
+  const normalized = token.replace(/\s+/g, '');
+  if (!/^\d{6}$/.test(normalized)) return false;
+  try {
+    return verifySync({ token: normalized, secret: decrypt(encryptedSecret) }).valid;
+  } catch {
+    return false;
+  }
+};
 
 export const createRecoveryCodes = async () => {
   const codes = Array.from({ length: 10 }, () => randomToken(8).slice(0, 10).toUpperCase());

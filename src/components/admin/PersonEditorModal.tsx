@@ -16,7 +16,7 @@ import {
 import { uploadMedia } from '../../api/admin';
 import { ASSETS } from '../../data/assets';
 import { useI18n } from '../../i18n';
-import { Person, PersonRole } from '../../types';
+import { Person, PersonLabGroup, PersonRole } from '../../types';
 
 export type EducationDraft = { key: string; year: string; degree: string; loc: string };
 export type ExperienceDraft = { key: string; year: string; role: string; loc: string };
@@ -34,6 +34,7 @@ export type PersonEditorDraft = {
   image: string;
   education: EducationDraft[];
   experience: ExperienceDraft[];
+  labGroup: PersonLabGroup;
   sortOrder: number;
 };
 
@@ -373,6 +374,7 @@ interface PersonEditorModalProps {
   mode: 'professor' | 'student';
   person?: Person;
   defaultRole?: PersonRole;
+  defaultLabGroup?: PersonLabGroup;
   onClose: () => void;
   onSave: (values: PersonEditorDraft) => Promise<void>;
 }
@@ -382,6 +384,7 @@ export const PersonEditorModal: React.FC<PersonEditorModalProps> = ({
   mode,
   person,
   defaultRole,
+  defaultLabGroup,
   onClose,
   onSave,
 }) => {
@@ -429,9 +432,10 @@ export const PersonEditorModal: React.FC<PersonEditorModalProps> = ({
       image: asText(person?.image),
       education: toEducation(person?.education),
       experience: toExperience(person?.experience),
+      labGroup: (person?.labGroup as PersonLabGroup) || defaultLabGroup || 'SEOL',
       sortOrder: Number(person?.sortOrder || 0),
     });
-  }, [open, person, mode, defaultRole]);
+  }, [open, person, mode, defaultRole, defaultLabGroup]);
 
   useEffect(() => {
     if (!open) return;
@@ -825,17 +829,54 @@ export const PersonEditorModal: React.FC<PersonEditorModalProps> = ({
                       ))}
                     </select>
                   </label>
+                  <fieldset className="mt-2">
+                    <legend className="sr-only">{m.people.editor.labGroup}</legend>
+                    <div className="inline-flex rounded-lg border border-slate-200 p-0.5" role="radiogroup" aria-label={m.people.editor.labGroup}>
+                      {(['SEOL', 'ADAML'] as const).map((group) => (
+                        <label
+                          key={group}
+                          className={`cursor-pointer rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide focus-within:ring-2 focus-within:ring-primary-500 ${
+                            values.labGroup === group ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="labGroup"
+                            value={group}
+                            checked={values.labGroup === group}
+                            onChange={() => patch({ labGroup: group })}
+                            className="sr-only"
+                          />
+                          {group === 'SEOL' ? m.people.editor.labSeol : m.people.editor.labAdaml}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-400">{m.people.editor.labGroupHint}</p>
+                  </fieldset>
                   <div className="mt-2 flex items-start gap-1.5 text-xs text-slate-600">
                     <Cpu size={12} className="mt-2 shrink-0 text-slate-400" aria-hidden="true" />
                     <GhostField
-                      label={m.people.editor.research}
+                      label={values.role === 'ALUMNI' ? m.people.editor.alumniResearch : m.people.editor.research}
                       value={values.research}
                       onChange={(research) => patch({ research })}
-                      placeholder={m.people.editor.research}
+                      placeholder={values.role === 'ALUMNI' ? m.people.editor.alumniResearch : m.people.editor.research}
                       className="flex-1"
                       inputClassName="font-medium"
                     />
                   </div>
+                  {values.role === 'ALUMNI' && (
+                    <div className="mt-1 flex items-start gap-1.5 text-xs text-slate-600">
+                      <Building2 size={12} className="mt-2 shrink-0 text-slate-400" aria-hidden="true" />
+                      <GhostField
+                        label={m.people.editor.currentPosition}
+                        value={values.affiliation}
+                        onChange={(affiliation) => patch({ affiliation })}
+                        placeholder={m.people.editor.currentPosition}
+                        className="flex-1"
+                        inputClassName="font-medium"
+                      />
+                    </div>
+                  )}
                   <div className="mt-2">
                     <span className="sr-only">{m.people.editor.equipment}</span>
                     <EquipmentEditor values={values.equipment} onChange={(equipment) => patch({ equipment })} />

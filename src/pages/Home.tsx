@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Cpu, Recycle, Microscope, Database, Zap, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { AnnouncementBanner } from '../components/AnnouncementBanner';
+import { RequestPanel } from '../components/RequestPanel';
 import { ASSETS } from '../data/assets';
 import { HighlightText, useI18n } from '../i18n';
 
@@ -15,7 +17,7 @@ export const Home: React.FC = () => {
   return (
     <Layout>
       <div className="w-full bg-[#1a1416] text-white">
-        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <motion.img
               src={ASSETS.IMAGES.HOME_HERO}
@@ -29,40 +31,56 @@ export const Home: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-[#1a1416]/60 via-transparent to-[#1a1416]/60"></div>
           </div>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            >
-              <span className="inline-flex items-center gap-3 mb-6 px-4 py-2 rounded-full border border-primary-400/40 bg-primary-900/30 backdrop-blur-sm">
-                <span className="w-2 h-2 rounded-full bg-primary-400"></span>
-                <span className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-primary-200">
-                  {m.home.badge}
-                </span>
-              </span>
-
-              <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-4 leading-tight drop-shadow-lg">
-                {m.home.title}
-              </h1>
-
-              <p className="text-sm md:text-base text-gray-300 mb-6 tracking-wide">
-                {m.home.affiliation}
-              </p>
-
-              <p className="text-xl md:text-2xl text-gray-200 font-light max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-md">
-                <HighlightText text={m.home.tagline} highlightClassName="font-semibold text-white" />
-              </p>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/research" className="px-8 py-4 bg-primary-600 text-white rounded-md font-bold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 group">
-                  {m.home.exploreResearch} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link to="/contact" className="px-8 py-4 bg-transparent border border-gray-600 text-white rounded-md font-bold hover:border-gray-400 transition-all text-center">
-                  {m.home.contactUs}
-                </Link>
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-10 lg:py-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem] gap-10 items-center">
+            <div className="relative self-stretch flex flex-col justify-center">
+              <div className="absolute inset-x-0 top-0">
+                <AnnouncementBanner />
               </div>
-            </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-center"
+              >
+                <span className="inline-flex items-center gap-3 mb-6 px-4 py-2 rounded-full border border-primary-400/40 bg-primary-900/30 backdrop-blur-sm">
+                  <span className="w-2 h-2 rounded-full bg-primary-400"></span>
+                  <span className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-primary-200">
+                    {m.home.badge}
+                  </span>
+                </span>
+
+                <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-4 leading-tight drop-shadow-lg">
+                  {m.home.title}
+                </h1>
+
+                <p className="text-sm md:text-base text-gray-300 mb-6 tracking-wide">
+                  {m.home.affiliation}
+                </p>
+
+                <p className="text-xl md:text-2xl text-gray-200 font-light max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-md">
+                  <HighlightText text={m.home.tagline} highlightClassName="font-semibold text-white" />
+                </p>
+
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <Link to="/research" className="px-8 py-4 bg-primary-600 text-white rounded-md font-bold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 group">
+                    {m.home.exploreResearch} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link to="/contact" className="px-8 py-4 bg-transparent border border-gray-600 text-white rounded-md font-bold hover:border-gray-400 transition-all text-center">
+                    {m.home.contactUs}
+                  </Link>
+                </div>
+              </motion.div>
+            </div>
+
+            <motion.aside
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
+              className="w-full lg:max-h-[calc(90vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.28)_transparent]"
+            >
+              <RequestPanel showAccountTools={false} variant="glass" collapsibleOnMobile />
+            </motion.aside>
           </div>
         </section>
 

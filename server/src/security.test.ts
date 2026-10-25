@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cleanHtml } from './sanitize.js';
-import { consumeRecoveryCode, createRecoveryCodes, decrypt, encrypt, hashPassword, verifyPassword } from './security.js';
+import { consumeRecoveryCode, createRecoveryCodes, decrypt, encrypt, hashPassword, verifyPassword, verifyTotp } from './security.js';
 
 describe('admin security helpers', () => {
   it('hashes and verifies passwords', async () => {
@@ -20,6 +20,12 @@ describe('admin security helpers', () => {
     const remaining = await consumeRecoveryCode(hashes, codes[0]);
     expect(remaining).toHaveLength(hashes.length - 1);
     await expect(consumeRecoveryCode(remaining ?? [], codes[0])).resolves.toBeNull();
+  });
+
+  it('does not throw when a recovery-length token is passed to TOTP verify', () => {
+    const encrypted = encrypt('JBSWY3DPEHPK3PXP');
+    expect(verifyTotp('ABCDEFGHIJ', encrypted)).toBe(false);
+    expect(verifyTotp('1234567890', encrypted)).toBe(false);
   });
 });
 

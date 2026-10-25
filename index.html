@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SEOL - POSTECH GIFT</title>
     <script>
+      (function () {
+        var host = location.hostname;
+        if (host === 'www.smd-lab.com') {
+          location.replace('https://smd-lab.com/' + location.search + location.hash);
+        } else if (host === 'www.adaml.site') {
+          location.replace('https://adaml.site/' + location.search + location.hash);
+        }
+      })();
+    </script>
+    <script>
       try {
         var locale = localStorage.getItem('smd-lab-locale');
         if (locale === 'ko' || locale === 'en') {

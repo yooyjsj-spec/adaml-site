@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminAnalysisRequests, assignableStaff } from '../../api/admin';
-import { AnalysisRequestItem, AnalysisRequestStatus } from '../../types';
+import { AnalysisRequestItem, AnalysisRequestStatus, formatAnalysisPurpose } from '../../types';
 import { useI18n } from '../../i18n';
 import { displayName } from '../../utils/displayName';
 
@@ -95,8 +95,44 @@ const RequestRow: React.FC<{
             <dl>
               <DetailRow label="제목" value={item.title} />
               <DetailRow label="분석 종류" value={item.category} />
+              <DetailRow
+                label="분석 목적"
+                value={formatAnalysisPurpose(item.purposes, item.purposeOther, m.request.purpose)}
+              />
               <DetailRow label="시료 정보" value={item.sampleInfo} multiline />
               <DetailRow label="상세 내용" value={item.description} multiline />
+              {item.attachments && item.attachments.length > 0 && (
+                <div className="grid grid-cols-[7rem_1fr] gap-3 border-b border-slate-100 py-2 last:border-b-0 sm:grid-cols-[8rem_1fr]">
+                  <dt className="text-xs font-bold uppercase tracking-wide text-slate-500">첨부</dt>
+                  <dd className="text-sm text-slate-800">
+                    <ul className="space-y-1">
+                      {item.attachments.map((attachment) =>
+                        attachment.kind === 'link' ? (
+                          <li key={attachment.url}>
+                            <a href={attachment.url} target="_blank" rel="noreferrer" className="font-bold text-primary-700 hover:underline">
+                              {attachment.url}
+                            </a>
+                          </li>
+                        ) : (
+                          <li key={attachment.fileName}>
+                            <a
+                              href={`/api/analysis-requests/${item.id}/files/${encodeURIComponent(attachment.fileName)}`}
+                              className="font-bold text-primary-700 hover:underline"
+                            >
+                              {attachment.originalName}
+                            </a>
+                            <span className="ml-2 text-xs text-slate-400">
+                              {attachment.size >= 1024 * 1024
+                                ? `${(attachment.size / (1024 * 1024)).toFixed(1)} MB`
+                                : `${Math.max(1, Math.round(attachment.size / 1024))} KB`}
+                            </span>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </dd>
+                </div>
+              )}
               <DetailRow label="접수 일시" value={new Date(item.createdAt).toLocaleString('ko-KR')} />
             </dl>
           </section>

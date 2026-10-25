@@ -26,7 +26,13 @@ export const apiRequest = async <T>(path: string, options: RequestOptions = {}):
     ...options,
     headers,
     credentials: 'include',
+    cache: 'no-store',
+    redirect: 'manual',
   });
+
+  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+    throw new Error('Redirected unexpectedly. Open https://smd-lab.com in a private window.');
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));

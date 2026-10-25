@@ -111,6 +111,8 @@ export interface RequestNotifyDetails {
   id: string;
   title: string;
   category?: string | null;
+  purposes?: string[];
+  purposeOther?: string | null;
   sampleInfo?: string | null;
   description: string;
   status?: string;
@@ -118,6 +120,7 @@ export interface RequestNotifyDetails {
   dueDate?: Date | string | null;
   adminNote?: string | null;
   requester: RequestParty;
+  attachments?: Array<{ kind: 'file'; originalName: string; size: number } | { kind: 'link'; url: string }>;
 }
 
 const tableRow = (label: string, value: string | null | undefined, multiline = false) => {
@@ -143,17 +146,44 @@ const requesterSection = (requester: RequestParty) =>
       tableRow('연락처', requester.phone)
   );
 
+const purposeLabel: Record<string, string> = {
+  PROJECT_PRESENTATION: '과제 발표',
+  JOINT_PAPER: '공동 논문',
+  OTHER: '기타',
+};
+
+const formatPurposes = (values?: string[], purposeOther?: string | null) => {
+  const purpose = values?.[0];
+  if (!purpose) return '';
+  const label = purposeLabel[purpose] ?? purpose;
+  if (purpose === 'OTHER') {
+    const detail = purposeOther?.trim();
+    return detail ? `${label} (${detail})` : label;
+  }
+  return label;
+};
+
 const requestContentSection = (details: RequestNotifyDetails) =>
   sectionTable(
     '요청 내용',
     tableRow('제목', details.title) +
       tableRow('분석 종류', details.category) +
+      tableRow('분석 목적', formatPurposes(details.purposes, details.purposeOther)) +
       tableRow('시료 정보', details.sampleInfo, true) +
       tableRow('상세 내용', details.description, true) +
       (details.status ? tableRow('상태', statusLabel[details.status] ?? details.status) : '') +
       (details.createdAt ? tableRow('접수 일시', formatDateTime(details.createdAt)) : '') +
       (details.dueDate ? tableRow('처리 예정일', formatDate(details.dueDate)) : '') +
-      (details.adminNote ? tableRow('관리자 메모', details.adminNote, true) : '')
+      (details.adminNote ? tableRow('관리자 메모', details.adminNote, true) : '') +
+      (details.attachments?.length
+        ? tableRow(
+            '첨부',
+            details.attachments
+              .map((item) => (item.kind === 'link' ? item.url : `${item.originalName} (${Math.round(item.size / 1024)} KB)`))
+              .join('\n'),
+            true
+          )
+        : '')
   );
 
 const staffRequestBody = (intro: string, details: RequestNotifyDetails) =>
